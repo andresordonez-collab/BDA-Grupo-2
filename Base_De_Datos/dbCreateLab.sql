@@ -143,3 +143,5 @@ CREATE TABLE movimientos_billeteras(
 	FOREIGN KEY (id_billetera) REFERENCES billeteras(id_billetera),
 	FOREIGN KEY (id_viaje) REFERENCES viajes(id_viaje)
 );
+
+SELECT * FROM usuarios
