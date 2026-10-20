@@ -150,4 +150,7 @@ SELECT setval(pg_get_serial_sequence('tarifas', 'id_tarifa'), MAX(id_tarifa)) FR
 SELECT setval(pg_get_serial_sequence('viajes', 'id_viaje'), MAX(id_viaje)) FROM viajes;
 SELECT setval(pg_get_serial_sequence('movimientos_billeteras', 'id_movimiento'), MAX(id_movimiento)) FROM movimientos_billeteras;
 
+-- Refrescar la vista materializada para reflejar inmediatamente los viajes insertados
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_demanda_estacion_horaria;
+
 COMMIT;
