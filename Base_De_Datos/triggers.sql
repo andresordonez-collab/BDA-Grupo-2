@@ -63,6 +63,7 @@ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_validar_inicio_viaje
 BEFORE INSERT ON viajes
 FOR EACH ROW
+WHEN (NEW.estado_viaje = 'Activo')
 EXECUTE FUNCTION validar_inicio_viaje();
 
 -- trigger 2:  Auditar cada cambio de estado de un vehículo a "En mantención" o "Dado de  baja", 

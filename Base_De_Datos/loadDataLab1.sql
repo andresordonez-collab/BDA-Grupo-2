@@ -1,25 +1,22 @@
 -- Datos ficticios para el Laboratorio 1 de Bases de Datos Avanzadas (PostgreSQL).
--- Compatible con el dbCreateLab.sql.
--- Ejecutar sobre tablas vacías, después de dbCreateLab1.sql.
 
-
+BEGIN;
 INSERT INTO roles (id_rol, nombre_rol) VALUES
     (1, 'Operador'),
     (2, 'Usuario');
 
 INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, usuario_activo, fecha_registro) VALUES
-    (1, 1, 'Camila Torres', 'camila.operadora@example.com', 'DUMMY_HASH_OPERADOR_001', TRUE, '2026-10-01 08:00:00'),
-    (2, 1, 'Diego Rojas', 'diego.operador@example.com', 'DUMMY_HASH_OPERADOR_002', TRUE, '2026-10-01 08:05:00'),
-    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', 'DUMMY_HASH_USUARIO_003', TRUE, '2026-10-02 09:00:00'),
-    (4, 2, 'Matías González', 'matias.gonzalez@example.com', 'DUMMY_HASH_USUARIO_004', TRUE, '2026-10-02 09:15:00'),
-    (5, 2, 'Valentina Soto', 'valentina.soto@example.com', 'DUMMY_HASH_USUARIO_005', TRUE, '2026-10-03 10:00:00'),
-    (6, 2, 'Benjamín Muñoz', 'benjamin.munoz@example.com', 'DUMMY_HASH_USUARIO_006', TRUE, '2026-10-03 10:30:00'),
-    (7, 2, 'Isidora Silva', 'isidora.silva@example.com', 'DUMMY_HASH_USUARIO_007', TRUE, '2026-10-04 11:00:00'),
-    (8, 2, 'Vicente Araya', 'vicente.araya@example.com', 'DUMMY_HASH_USUARIO_008', TRUE, '2026-10-04 11:20:00'),
-    (9, 2, 'Catalina Reyes', 'catalina.reyes@example.com', 'DUMMY_HASH_USUARIO_009', TRUE, '2026-10-05 12:00:00'),
-    (10, 2, 'Joaquín Díaz', 'joaquin.diaz@example.com', 'DUMMY_HASH_USUARIO_010', FALSE, '2026-10-05 12:30:00');
+    (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-01 08:00:00'),
+    (2, 1, 'Diego Rojas', 'diego.operador@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-01 08:05:00'),
+    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-02 09:00:00'),
+    (4, 2, 'Matías González', 'matias.gonzalez@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-02 09:15:00'),
+    (5, 2, 'Valentina Soto', 'valentina.soto@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:00:00'),
+    (6, 2, 'Benjamín Muñoz', 'benjamin.munoz@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:30:00'),
+    (7, 2, 'Isidora Silva', 'isidora.silva@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-04 11:00:00'),
+    (8, 2, 'Vicente Araya', 'vicente.araya@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-04 11:20:00'),
+    (9, 2, 'Catalina Reyes', 'catalina.reyes@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-05 12:00:00'),
+    (10, 2, 'Joaquín Díaz', 'joaquin.diaz@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', FALSE, '2026-10-05 12:30:00');
 
--- Tokens vigentes, revocados y vencidos según la fecha de referencia.
 INSERT INTO refresh_tokens (id_refresh_token, id_usuario, token_hash, expira_en, revocado) VALUES
     (1, 1, 'DUMMY_TOKEN_HASH_001', '2026-10-26 08:00:00', FALSE),
     (2, 3, 'DUMMY_TOKEN_HASH_003', '2026-10-25 09:00:00', FALSE),
@@ -28,7 +25,6 @@ INSERT INTO refresh_tokens (id_refresh_token, id_usuario, token_hash, expira_en,
     (5, 9, 'DUMMY_TOKEN_HASH_009', '2026-10-18 12:00:00', FALSE),
     (6, 10, 'DUMMY_TOKEN_HASH_010', '2026-10-25 12:30:00', TRUE);
 
-
 INSERT INTO billeteras (id_billetera, id_usuario, saldo) VALUES
     (1, 3, 17900.00),
     (2, 4, 14160.00),
@@ -36,9 +32,8 @@ INSERT INTO billeteras (id_billetera, id_usuario, saldo) VALUES
     (4, 6, 18300.00),
     (5, 7, 18560.00),
     (6, 8, 16700.00),
-    (7, 9, 19660.00),
+    (7, 9, -340.00),
     (8, 10, 15900.00);
-
 
 INSERT INTO estaciones (id_estacion, nombre_estacion, direccion, latitud, longitud, capacidad, estacion_activa) VALUES
     (1, 'Plaza de Armas', 'Plaza de Armas 100, Santiago', -33.437200, -70.650600, 20, TRUE),
@@ -48,11 +43,9 @@ INSERT INTO estaciones (id_estacion, nombre_estacion, direccion, latitud, longit
     (5, 'Los Leones', 'Nueva Providencia 2200, Providencia', -33.420700, -70.609500, 20, TRUE),
     (6, 'Parque Bustamante', 'General Bustamante 120, Providencia', -33.442700, -70.631500, 12, TRUE);
 
-
 INSERT INTO tipos_vehiculos (id_tipo_vehiculo, nombre_tipo_vehiculo) VALUES
     (1, 'Bicicleta'),
     (2, 'Scooter');
-
 
 INSERT INTO vehiculos
     (id_vehiculo, id_tipo_vehiculo, id_estacion, codigo_vehiculo, nivel_bateria, fecha_alta, estado_vehiculo)
@@ -68,7 +61,7 @@ VALUES
     (9, 2, 4, 'SCOOT-001', 75, '2026-10-01 09:00:00', 'Disponible'),
     (10, 2, 5, 'SCOOT-002', 62, '2026-10-01 09:00:00', 'Disponible'),
     (11, 2, 1, 'SCOOT-003', 48, '2026-10-01 09:00:00', 'Disponible'),
-    (12, 2, 5, 'SCOOT-004', 35, '2026-10-01 09:00:00', 'Disponible'),
+    (12, 2, 5, 'SCOOT-004', 15, '2026-10-01 09:00:00', 'Disponible'),
     (13, 2, 2, 'SCOOT-005', 55, '2026-10-01 09:00:00', 'Disponible'),
     (14, 2, NULL, 'SCOOT-006', 80, '2026-10-01 09:00:00', 'En uso'),
     (15, 2, 2, 'SCOOT-007', 100, '2026-10-01 09:00:00', 'Disponible'),
@@ -81,7 +74,6 @@ VALUES
     (2, 3, 5, 2, 2, '2026-10-19 11:00:00', 'Completada'),
     (3, 1, 6, 1, 1, '2026-10-19 11:30:00', 'Cancelada');
 
-
 INSERT INTO detalles_rebalanceo (id_orden, id_vehiculo) VALUES
     (1, 1),
     (1, 4),
@@ -92,12 +84,10 @@ INSERT INTO detalles_rebalanceo (id_orden, id_vehiculo) VALUES
 INSERT INTO auditorias_vehiculos
     (id_auditoria, id_vehiculo, id_operador, estado_anterior, estado_nuevo, fecha_auditoria, motivo)
 VALUES
-    (1, 1, 1, 'En mantención', 'Disponible', '2026-10-14 08:00:00', 'Mantención preventiva terminada.'),
-    (2, 7, 1, 'Disponible', 'En mantención', '2026-10-18 14:00:00', 'Ajuste de frenos y cambio de cadena.'),
-    (3, 8, 2, 'Disponible', 'Dado de baja', '2026-10-18 15:00:00', 'Daño estructural; vehículo retirado del servicio.'),
-    (4, 16, 2, 'En mantención', 'Disponible', '2026-10-19 07:30:00', 'Revisión eléctrica terminada y batería cargada.'),
-    (5, 6, 1, 'Disponible', 'En uso', '2026-10-19 09:00:00', 'Inicio de viaje supervisado por operador.'),
-    (6, 14, 2, 'Disponible', 'En uso', '2026-10-19 09:10:00', 'Inicio de viaje supervisado por operador.');
+    (1, 1, 1, 'Disponible', 'En mantención', '2026-10-13 10:00:00', 'Mantención preventiva programada de rodamientos.'),
+    (2, 16, 2, 'Disponible', 'En mantención', '2026-10-18 09:00:00', 'Revisión del sistema eléctrico y recarga profunda de batería.'),
+    (3, 7, 1, 'Disponible', 'En mantención', '2026-10-18 14:00:00', 'Ajuste de frenos y cambio de cadena.'),
+    (4, 8, 2, 'Disponible', 'Dado de baja', '2026-10-18 15:00:00', 'Daño estructural en el marco; vehículo retirado del servicio.');
 
 INSERT INTO tarifas
     (id_tarifa, id_tipo_vehiculo, valor_desbloqueo, valor_minuto, vigente_desde, activa)
@@ -133,7 +123,7 @@ VALUES
     (4, 4, NULL, 'Recarga', 20000.00, '2026-10-14 08:30:00'),
     (5, 5, NULL, 'Recarga', 20000.00, '2026-10-14 08:40:00'),
     (6, 6, NULL, 'Recarga', 20000.00, '2026-10-14 08:50:00'),
-    (7, 7, NULL, 'Recarga', 20000.00, '2026-10-14 09:00:00'),
+    (7, 7, NULL, 'Recarga', 500.00,   '2026-10-14 09:00:00'),
     (8, 8, NULL, 'Recarga', 20000.00, '2026-10-14 09:10:00'),
     (9, 1, 1, 'Cobro_viaje', 1500.00, '2026-10-15 09:15:00'),
     (10, 2, 2, 'Cobro_viaje', 2000.00, '2026-10-15 10:10:00'),
@@ -141,15 +131,12 @@ VALUES
     (12, 4, 4, 'Cobro_viaje', 1700.00, '2026-10-16 10:08:00'),
     (13, 5, 5, 'Cobro_viaje', 1440.00, '2026-10-17 09:12:00'),
     (14, 6, 6, 'Cobro_viaje', 3300.00, '2026-10-17 10:15:00'),
-    (15, 7, 7, 'Cobro_viaje', 840.00, '2026-10-18 09:07:00'),
+    (15, 7, 7, 'Cobro_viaje', 840.00,  '2026-10-18 09:07:00'),
     (16, 8, 8, 'Cobro_viaje', 5100.00, '2026-10-18 10:25:00'),
-    (17, 1, 9, 'Cobro_viaje', 600.00, '2026-10-19 08:05:00'),
+    (17, 1, 9, 'Cobro_viaje', 600.00,  '2026-10-19 08:05:00'),
     (18, 2, 10, 'Cobro_viaje', 3840.00, '2026-10-19 08:48:00'),
-    (19, 7, NULL, 'Ajuste', 500.00, '2026-10-19 10:00:00'),
-    (20, 8, NULL, 'Ajuste', 1000.00, '2026-10-19 10:05:00');
+    (19, 8, NULL, 'Ajuste', 1000.00, '2026-10-19 10:05:00');
 
-
--- Sincronización de secuencias BIGSERIAL al utilizar IDs explícitos.
 SELECT setval(pg_get_serial_sequence('roles', 'id_rol'), MAX(id_rol)) FROM roles;
 SELECT setval(pg_get_serial_sequence('usuarios', 'id_usuario'), MAX(id_usuario)) FROM usuarios;
 SELECT setval(pg_get_serial_sequence('refresh_tokens', 'id_refresh_token'), MAX(id_refresh_token)) FROM refresh_tokens;
@@ -164,4 +151,3 @@ SELECT setval(pg_get_serial_sequence('viajes', 'id_viaje'), MAX(id_viaje)) FROM 
 SELECT setval(pg_get_serial_sequence('movimientos_billeteras', 'id_movimiento'), MAX(id_movimiento)) FROM movimientos_billeteras;
 
 COMMIT;
-

@@ -17,19 +17,19 @@ No se actualiza sola cuando cambian las tablas de origen; requiere una orden exp
 CREATE MATERIALIZED VIEW mv_demanda_estacion_horaria AS
 WITH viajes_iniciados AS (
     SELECT
-        origen_id AS id_estacion,
+        id_origen AS id_estacion,
         EXTRACT(HOUR FROM fecha_inicio)::INT AS franja_horaria,
         COUNT(*) AS cantidad_viajes
     FROM viajes
-    GROUP BY origen_id, EXTRACT(HOUR FROM fecha_inicio)::INT
+    GROUP BY id_origen, EXTRACT(HOUR FROM fecha_inicio)::INT
 ),
 viajes_finalizados AS (
     SELECT
-        destino_id AS id_estacion,
+        id_destino AS id_estacion,
         EXTRACT(HOUR FROM fecha_fin)::INT AS franja_horaria,
         COUNT(*) AS cantidad_viajes
     FROM viajes
-    GROUP BY destino_id, EXTRACT(HOUR FROM fecha_fin)::INT
+    GROUP BY id_destino, EXTRACT(HOUR FROM fecha_fin)::INT
 )
 -- Selecciona todas las estaciones y combina con las franjas horarias, uniendo los resultados de los CTEs.
 SELECT
