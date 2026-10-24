@@ -1,0 +1,24 @@
+# Archivos personales de agentes y asistentes de IA
+AGENTS.md
+.github/
+.copilotignore
+.copilot/
+BITACORA.md
+
+# Configuración y estado local de herramientas
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# Variables de entorno y secretos locales
+.env
+.env.*
+!.env.example
+
+# Archivos temporales del sistema y editores
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
