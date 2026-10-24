@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Env ###
+.env
+
+### Copilot IA ###
+.copilot/
+.copilotignore
