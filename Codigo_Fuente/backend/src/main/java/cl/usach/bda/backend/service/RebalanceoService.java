@@ -25,9 +25,9 @@ public class RebalanceoService {
         this.repository = repository;
     }
 
-    public void rebalancear(RebalanceoRequestDTO solicitud) {
+    public void rebalancear(RebalanceoRequestDTO solicitud, Long idOperador) {
         try {
-            repository.rebalancear(solicitud);
+            repository.rebalancear(solicitud, idOperador);
         } catch (DataAccessException exception) {
             for (Throwable cause = exception.getCause(); cause != null; cause = cause.getCause()) {
                 if (cause instanceof SQLException sql && "P0001".equals(sql.getSQLState())

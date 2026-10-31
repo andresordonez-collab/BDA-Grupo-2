@@ -11,7 +11,6 @@ import tools.jackson.databind.annotation.JsonDeserialize;
 public record RebalanceoRequestDTO(
         @NotNull @JsonDeserialize(using = EnteroLargo.class) Long idEstacionOrigen,
         @NotNull @JsonDeserialize(using = EnteroLargo.class) Long idEstacionDestino,
-        @NotNull @JsonDeserialize(using = EnteroLargo.class) Long idOperador,
         @NotNull @JsonDeserialize(using = Entero.class) Integer cantidadVehiculos
 ) {
     // Rechazar coerciones de texto/decimales solo para este contrato, sin cambiar
