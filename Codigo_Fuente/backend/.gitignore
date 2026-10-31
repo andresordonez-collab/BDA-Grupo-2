@@ -33,7 +33,7 @@ build/
 .vscode/
 
 ### Env ###
-.env
+../../.env
 
 ### Copilot IA ###
 .copilot/
