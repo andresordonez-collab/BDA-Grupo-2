@@ -1,16 +1,15 @@
-import axios from 'axios';
+import http from '../http-common';
 
-// Comunicamos el frontend (React) con el backend 
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
+/**
+ * Compatibilidad temporal con las pantallas existentes.
+ *
+ * La capa nueva del panel de operador usará servicios por entidad en
+ * src/services/*Service.js. Este archivo se mantiene para no romper
+ * PanelUsuario mientras se migra el frontend.
+ */
 export const GetEstacionesDisponibles = async () => {
-    const respuesta = await api.get('/estaciones/disponibilidad');
-    return respuesta.data;
+  const { data } = await http.get('/api/estaciones/disponibilidad');
+  return data;
 };
 
-export default api;
+export default http;
