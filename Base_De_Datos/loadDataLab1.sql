@@ -6,9 +6,9 @@ INSERT INTO roles (id_rol, nombre_rol) VALUES
     (2, 'Usuario');
 
 INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, usuario_activo, fecha_registro) VALUES
-    (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-01 08:00:00'),
+    (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2a$10$8pKUEnjC9A8XRZ9a/cuXHOBh0lRGbrlJjDEY9Olo5JhzGBUByhY9q', TRUE, '2026-10-01 08:00:00'),
     (2, 1, 'Diego Rojas', 'diego.operador@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-01 08:05:00'),
-    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-02 09:00:00'),
+    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', '$2a$10$8pKUEnjC9A8XRZ9a/cuXHOBh0lRGbrlJjDEY9Olo5JhzGBUByhY9q', TRUE, '2026-10-02 09:00:00'),
     (4, 2, 'Matías González', 'matias.gonzalez@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-02 09:15:00'),
     (5, 2, 'Valentina Soto', 'valentina.soto@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:00:00'),
     (6, 2, 'Benjamín Muñoz', 'benjamin.munoz@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:30:00'),
