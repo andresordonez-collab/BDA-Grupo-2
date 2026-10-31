@@ -8,6 +8,8 @@ import PanelUsuario from './pages/PanelUsuario';
 import Unauthorized from './pages/Unauthorized';
 import PlaceholderPage from './pages/PlaceholderPage';
 import FlotaPage from './pages/operador/FlotaPage';
+import EstacionesPage from './pages/operador/EstacionesPage';
+import RebalanceoPage from './pages/operador/RebalanceoPage';
 
 const theme = createTheme({
   palette: {
@@ -46,25 +48,9 @@ function App() {
 
             <Route path="flota" element={<FlotaPage />} />
 
-            <Route
-              path="estaciones"
-              element={
-                <PlaceholderPage
-                  title="Estaciones"
-                  description="Aquí se mostrará la capacidad, ocupación y disponibilidad de cada estación."
-                />
-              }
-            />
+            <Route path="estaciones" element={<EstacionesPage />} />
 
-            <Route
-              path="rebalanceo"
-              element={
-                <PlaceholderPage
-                  title="Rebalanceo"
-                  description="Aquí se ejecutará el traslado de vehículos entre estaciones."
-                />
-              }
-            />
+            <Route path="rebalanceo" element={<RebalanceoPage />} />
 
             <Route
               path="auditoria"

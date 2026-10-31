@@ -28,7 +28,7 @@ export default function Layout({ role, usuario, onLogout }) {
         <Toolbar />
 
         <Box sx={{ maxWidth: 1400, mx: 'auto' }}>
-          <Outlet />
+          <Outlet context={{ usuario, onLogout }} />
         </Box>
       </Box>
     </Box>

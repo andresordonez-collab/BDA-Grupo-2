@@ -23,9 +23,12 @@ const http = axios.create({
  * Extrae un mensaje legible desde una respuesta de error del backend.
  */
 export function getErrorMessage(error) {
+  const data = error?.response?.data;
+
   return (
-    error?.response?.data?.message ??
-    error?.response?.data?.error ??
+    data?.message ??
+    data?.mensaje ??
+    data?.error ??
     error?.message ??
     'Ocurrió un error inesperado.'
   );
