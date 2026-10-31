@@ -1,10 +1,11 @@
 package cl.usach.bda.backend.controller;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.entities.EstacionEntity;
 import cl.usach.bda.backend.service.EstacionService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,8 +19,43 @@ public class EstacionController {
         this.estacionService = estacionService;
     }
 
+    // Endpoint para obtener la disponibilidad de todas las estaciones.
     @GetMapping("/disponibilidad")
     public List<DisponibilidadEstacionDTO> obtenerDisponibilidad() {
         return estacionService.obtenerDisponibilidad();
+    }
+
+    // Endpoint para listar todas las estaciones.
+    @GetMapping
+    public ResponseEntity<List<EstacionEntity>> listarEstaciones() {
+        return ResponseEntity.ok(estacionService.listarEstaciones());
+    }
+
+    // Endpoint para obtener una estación por su ID.
+    @GetMapping("/{id}")
+    public ResponseEntity<EstacionEntity> obtenerPorId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(estacionService.obtenerEstacionPorId(id));
+    }
+
+    // Endpoint para crear una nueva estación.
+    @PostMapping
+    public ResponseEntity<EstacionEntity> crear(@RequestBody EstacionEntity estacion) {
+        EstacionEntity creada = estacionService.guardarEstacion(estacion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creada);
+    }
+
+    // Endpoint para actualizar una estación existente.
+    @PutMapping("/{id}")
+    public ResponseEntity<EstacionEntity> actualizar(
+            @PathVariable("id") Long id,
+            @RequestBody EstacionEntity estacion) {
+        return ResponseEntity.ok(estacionService.actualizarEstacion(id, estacion));
+    }
+    
+    // Endpoint para eliminar una estación por su ID.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
+        estacionService.eliminarEstacion(id);
+        return ResponseEntity.noContent().build();
     }
 }

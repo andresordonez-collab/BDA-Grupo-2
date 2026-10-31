@@ -1,7 +1,7 @@
 package cl.usach.bda.backend.rebalanceo;
 
 import cl.usach.bda.backend.controller.RebalanceoController;
-import cl.usach.bda.backend.controller.RebalanceoExceptionHandler;
+import cl.usach.bda.backend.exception.GlobalExceptionHandler;
 import cl.usach.bda.backend.dto.RebalanceoRequestDTO;
 import cl.usach.bda.backend.repository.RebalanceoRepository;
 import cl.usach.bda.backend.service.RebalanceoService;
@@ -32,7 +32,7 @@ class RebalanceoEndpointTest {
     void setup() {
         repository = mock(RebalanceoRepository.class);
         mvc = MockMvcBuilders.standaloneSetup(new RebalanceoController(new RebalanceoService(repository)))
-                .setControllerAdvice(new RebalanceoExceptionHandler()).build();
+                .setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 
     @Test
