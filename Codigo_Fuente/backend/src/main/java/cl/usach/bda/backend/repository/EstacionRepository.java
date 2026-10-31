@@ -82,7 +82,7 @@ public class EstacionRepository {
 
     // Actualizar una estación existente.
     public boolean update(Long idEstacion, EstacionEntity estacion){
-        String sql = "UPDATE estaciones" +
+        String sql = "UPDATE estaciones " +
                 "SET nombre_estacion = ?," +
                 "direccion = ?," +
                 "latitud = ?," +
