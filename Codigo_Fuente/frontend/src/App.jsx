@@ -6,10 +6,11 @@ import Layout from './components/layout';
 import Login from './pages/Login';
 import PanelUsuario from './pages/PanelUsuario';
 import Unauthorized from './pages/Unauthorized';
-import PlaceholderPage from './pages/PlaceholderPage';
 import FlotaPage from './pages/operador/FlotaPage';
 import EstacionesPage from './pages/operador/EstacionesPage';
 import RebalanceoPage from './pages/operador/RebalanceoPage';
+import AuditoriaPage from './pages/operador/AuditoriaPage';
+import DemandaPage from './pages/operador/DemandaPage';
 
 const theme = createTheme({
   palette: {
@@ -28,6 +29,18 @@ const theme = createTheme({
   },
 });
 
+// Usuario simulado solo para el modo mock. En modo real, el AuthContext
+// debe entregar este mismo objeto desde /api/auth/me.
+const usuarioMock =
+  import.meta.env.VITE_USE_MOCKS === 'true'
+    ? {
+        idUsuario: 1,
+        nombreUsuario: 'Camila Torres',
+        email: 'camila.operadora@example.com',
+        rol: 'Operador',
+      }
+    : undefined;
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -43,34 +56,19 @@ function App() {
           <Route path="/usuario" element={<PanelUsuario />} />
 
           {/* Operador */}
-          <Route path="/operador" element={<Layout role="Operador" />}>
+          <Route
+            path="/operador"
+            element={
+              <Layout role="Operador" usuario={usuarioMock} />
+            }
+          >
             <Route index element={<Navigate to="/operador/flota" replace />} />
 
             <Route path="flota" element={<FlotaPage />} />
-
             <Route path="estaciones" element={<EstacionesPage />} />
-
             <Route path="rebalanceo" element={<RebalanceoPage />} />
-
-            <Route
-              path="auditoria"
-              element={
-                <PlaceholderPage
-                  title="Auditoría"
-                  description="Aquí se revisarán los cambios de estado de los vehículos."
-                />
-              }
-            />
-
-            <Route
-              path="demanda"
-              element={
-                <PlaceholderPage
-                  title="Demanda"
-                  description="Aquí se mostrará la demanda por estación y franja horaria."
-                />
-              }
-            />
+            <Route path="auditoria" element={<AuditoriaPage />} />
+            <Route path="demanda" element={<DemandaPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
