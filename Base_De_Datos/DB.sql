@@ -549,17 +549,21 @@ INSERT INTO roles (id_rol, nombre_rol) VALUES
     (1, 'Operador'),
     (2, 'Usuario');
 
+-- Autenticación de los 10 usuarios de prueba: contraseña 123456.
+-- Cada usuario tiene su propio hash BCrypt con sal aleatoria (costo 12).
+-- Credenciales destinadas únicamente a pruebas locales del proyecto.
+-- Joaquín Díaz permanece inactivo: su login debe devolver 401 aunque la contraseña coincida.
 INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, usuario_activo, fecha_registro) VALUES
-    (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2a$10$8pKUEnjC9A8XRZ9a/cuXHOBh0lRGbrlJjDEY9Olo5JhzGBUByhY9q', TRUE, '2026-10-01 08:00:00'),
-    (2, 1, 'Diego Rojas', 'diego.operador@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-01 08:05:00'),
-    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', '$2a$10$8pKUEnjC9A8XRZ9a/cuXHOBh0lRGbrlJjDEY9Olo5JhzGBUByhY9q', TRUE, '2026-10-02 09:00:00'),
-    (4, 2, 'Matías González', 'matias.gonzalez@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-02 09:15:00'),
-    (5, 2, 'Valentina Soto', 'valentina.soto@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:00:00'),
-    (6, 2, 'Benjamín Muñoz', 'benjamin.munoz@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-03 10:30:00'),
-    (7, 2, 'Isidora Silva', 'isidora.silva@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-04 11:00:00'),
-    (8, 2, 'Vicente Araya', 'vicente.araya@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-04 11:20:00'),
-    (9, 2, 'Catalina Reyes', 'catalina.reyes@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', TRUE, '2026-10-05 12:00:00'),
-    (10, 2, 'Joaquín Díaz', 'joaquin.diaz@example.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', FALSE, '2026-10-05 12:30:00');
+    (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2b$12$.AOSg8WLAsw10VVQlQulEOAekY/IzNxg2z0IeaPrSAfFTjSZx05U2', TRUE, '2026-10-01 08:00:00'),
+    (2, 1, 'Diego Rojas', 'diego.operador@example.com', '$2b$12$VieRQxDOuBcFC3GI5Ay53OsZT6YSS4H4j.p3ONlHBzdXyNr9bVGy6', TRUE, '2026-10-01 08:05:00'),
+    (3, 2, 'Sofía Pérez', 'sofia.perez@example.com', '$2b$12$baopN/Pu4zyXGHoM/6SZaeO0cmtYx3s0boft/HsXGo7pZL02q5z6G', TRUE, '2026-10-02 09:00:00'),
+    (4, 2, 'Matías González', 'matias.gonzalez@example.com', '$2b$12$jQp3vrzXcJyMoEC7pixOje8MSWY0ddARFxhsgf/8teiDuKaEF9eHG', TRUE, '2026-10-02 09:15:00'),
+    (5, 2, 'Valentina Soto', 'valentina.soto@example.com', '$2b$12$0vlpz5edE7z47XUbf8jjBO09a6Z9UUGXDpiY.zx42rzYSUbVmWpPO', TRUE, '2026-10-03 10:00:00'),
+    (6, 2, 'Benjamín Muñoz', 'benjamin.munoz@example.com', '$2b$12$cS9Z8Ti2RmcNT3wXYECg3O9HYS03TozEm9YGdiuVf27T6xbJlcyGm', TRUE, '2026-10-03 10:30:00'),
+    (7, 2, 'Isidora Silva', 'isidora.silva@example.com', '$2b$12$lTkMNblRagVvPqrLrG/DFum80Xy1/nL0.LpNzXl7gLoC2ZUBJ1ceK', TRUE, '2026-10-04 11:00:00'),
+    (8, 2, 'Vicente Araya', 'vicente.araya@example.com', '$2b$12$zpQ7OpTbo2M6R9ME7YsuxeZLBUH90JWWKbqcYIvyLOQ4EPfs2Ukm2', TRUE, '2026-10-04 11:20:00'),
+    (9, 2, 'Catalina Reyes', 'catalina.reyes@example.com', '$2b$12$ft39IST4RYIUgHizYdVx0eo5IUrSs2UuwBBZBqkSIftMXFL3jJlPq', TRUE, '2026-10-05 12:00:00'),
+    (10, 2, 'Joaquín Díaz', 'joaquin.diaz@example.com', '$2b$12$ZtAafdcmu6A9mXy1p3xCIe5TvxQQciroFDz5yCTcN6kH6CjakmROi', FALSE, '2026-10-05 12:30:00');
 
 INSERT INTO refresh_tokens (id_refresh_token, id_usuario, token_hash, expira_en, revocado) VALUES
     (1, 1, 'DUMMY_TOKEN_HASH_001', '2026-10-26 08:00:00', FALSE),
