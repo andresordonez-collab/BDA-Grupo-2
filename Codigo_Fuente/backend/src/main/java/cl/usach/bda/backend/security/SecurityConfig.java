@@ -30,6 +30,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/api/auth/login", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/viajes/*/finalizar").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.GET, "/api/estaciones/**", "/api/tarifas/**",
+                                "/api/tipos-vehiculos/**").authenticated()
+                        .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",
+                                "/api/roles/**", "/api/rebalanceos/**").hasRole("Operador")
                         .anyRequest().authenticated()
                 );
         return http.build();
