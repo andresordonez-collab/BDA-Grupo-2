@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,6 +38,11 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, "REBALANCEO_RECHAZADO", ex.getMessage());
     }
 
+    @ExceptionHandler(FinalizarViajeNegocioException.class)
+    public ResponseEntity<Map<String, Object>> manejarFinalizarViaje(FinalizarViajeNegocioException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, "FINALIZAR_VIAJE_RECHAZADO", ex.getMessage());
+    }
+
     // 2. Argumentos inválidos o reglas de negocio en Service (400 Bad Request)
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<Map<String, Object>> manejarSolicitudInvalida(Exception ex) {
@@ -46,9 +52,22 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, "SOLICITUD_INVALIDA", mensaje);
     }
 
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> manejarTipoParametro(MethodArgumentTypeMismatchException ex,
+                                                                   HttpServletRequest request) {
+        if (esFinalizacionViaje(request)) {
+            return construirRespuesta(HttpStatus.BAD_REQUEST, "SOLICITUD_INVALIDA",
+                    "Los identificadores deben ser enteros positivos dentro de su rango.");
+        }
+        return manejarErrorInterno(ex, request);
+    }
+
     // 3. Violación de restricciones SQL: UNIQUE, FOREIGN KEY, CHECK, NOT NULL (409 Conflict / 400 Bad Request)
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, Object>> manejarIntegridadDatos(DataIntegrityViolationException ex) {
+    public ResponseEntity<Map<String, Object>> manejarIntegridadDatos(DataIntegrityViolationException ex, HttpServletRequest request) {
+        if (esFinalizacionViaje(request)) {
+            return manejarErrorInterno(ex, request);
+        }
         String detalle = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
         LOGGER.warn("Violación de integridad en BD: {}", detalle);
         return construirRespuesta(HttpStatus.CONFLICT, "VIOLACION_INTEGRIDAD_BD", detalle);
@@ -58,7 +77,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> manejarErrorBaseDatos(DataAccessException ex, HttpServletRequest request) {
         // El servicio de rebalanceo ya clasifica los rechazos de negocio conocidos.
-        if (esRebalanceo(request)) {
+        if (esRebalanceo(request) || esFinalizacionViaje(request)) {
             return manejarErrorInterno(ex, request);
         }
         Throwable causaRaiz = ex.getMostSpecificCause();
@@ -77,6 +96,11 @@ public class GlobalExceptionHandler {
                 ? "No fue posible completar el rebalanceo."
                 : "No fue posible completar la solicitud.";
         return construirRespuesta(HttpStatus.INTERNAL_SERVER_ERROR, "ERROR_INTERNO", mensaje);
+    }
+
+    private boolean esFinalizacionViaje(HttpServletRequest request) {
+        String ruta = request.getRequestURI().substring(request.getContextPath().length());
+        return ruta.matches("/api/viajes/[^/]+/finalizar");
     }
 
     private boolean esRebalanceo(HttpServletRequest request) {

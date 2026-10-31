@@ -3,6 +3,7 @@ package cl.usach.bda.backend.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,6 +29,7 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/api/auth/login", "/error").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/viajes/*/finalizar").hasRole("Usuario")
                         .anyRequest().authenticated()
                 );
         return http.build();
