@@ -539,6 +539,96 @@ SELECT cron.schedule(
     $$SELECT fn_refrescar_demanda_estaciones();$$
 );
 
+-- Resumen mensual de un usuario: viajes finalizados que iniciaron en el mes,
+-- minutos totales y gasto. Si no hay viajes, devuelve ceros.
+CREATE OR REPLACE FUNCTION fn_resumen_mensual_usuario(
+    p_id_usuario BIGINT,
+    p_anio INT,
+    p_mes INT
+)
+RETURNS TABLE (
+    cantidad_viajes BIGINT,
+    minutos_totales BIGINT,
+    gasto_total NUMERIC
+)
+LANGUAGE sql STABLE AS $$
+    SELECT
+        COUNT(*),
+        COALESCE(SUM(minutos_viaje), 0),
+        COALESCE(SUM(costo), 0)
+    FROM viajes
+    WHERE id_usuario = p_id_usuario
+      AND estado_viaje = 'Finalizado'
+      AND fecha_inicio >= make_date(p_anio, p_mes, 1)
+      AND fecha_inicio <  make_date(p_anio, p_mes, 1) + INTERVAL '1 month';
+$$;
+
+-- Inicia un viaje: valida al usuario y al vehículo, crea el viaje con la tarifa vigente
+-- y saca el vehículo de la estación, todo en una sola transacción. Devuelve el id del viaje.
+-- Las reglas de saldo, batería y viaje activo las valida trigger_validar_inicio_viaje.
+CREATE OR REPLACE FUNCTION fn_iniciar_viaje(p_id_usuario BIGINT, p_id_vehiculo BIGINT)
+RETURNS BIGINT
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_id_tipo_vehiculo BIGINT;
+    v_id_estacion BIGINT;
+    v_estado_vehiculo VARCHAR(20);
+    v_id_tarifa BIGINT;
+    v_id_viaje BIGINT;
+BEGIN
+    -- 1. Bloquear al usuario activo: serializa los inicios de un mismo usuario
+    --    y evita que dos viajes simultáneos pasen la validación de viaje activo.
+    PERFORM 1
+    FROM usuarios
+    WHERE id_usuario = p_id_usuario AND usuario_activo = TRUE
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Error: El usuario % no existe o está inactivo.', p_id_usuario;
+    END IF;
+
+    -- 2. Bloquear el vehículo: evita que dos usuarios tomen el mismo.
+    SELECT id_tipo_vehiculo, id_estacion, estado_vehiculo
+    INTO v_id_tipo_vehiculo, v_id_estacion, v_estado_vehiculo
+    FROM vehiculos
+    WHERE id_vehiculo = p_id_vehiculo
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Error: El vehículo % no existe.', p_id_vehiculo;
+    END IF;
+
+    IF v_estado_vehiculo <> 'Disponible' OR v_id_estacion IS NULL THEN
+        RAISE EXCEPTION 'Error: El vehículo % no está disponible.', p_id_vehiculo;
+    END IF;
+
+    -- 3. Tarifa activa más reciente para el tipo de vehículo.
+    SELECT id_tarifa
+    INTO v_id_tarifa
+    FROM tarifas
+    WHERE id_tipo_vehiculo = v_id_tipo_vehiculo AND activa = TRUE
+    ORDER BY vigente_desde DESC
+    LIMIT 1;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Error: No hay una tarifa activa para el vehículo %.', p_id_vehiculo;
+    END IF;
+
+    -- 4. Crear el viaje (aquí se dispara el trigger de validación).
+    INSERT INTO viajes (id_usuario, id_vehiculo, id_origen, id_tarifa, fecha_inicio, estado_viaje)
+    VALUES (p_id_usuario, p_id_vehiculo, v_id_estacion, v_id_tarifa, NOW(), 'Activo')
+    RETURNING id_viaje INTO v_id_viaje;
+
+    -- 5. Sacar el vehículo de la estación y marcarlo en uso.
+    UPDATE vehiculos
+    SET estado_vehiculo = 'En uso',
+        id_estacion = NULL
+    WHERE id_vehiculo = p_id_vehiculo;
+
+    RETURN v_id_viaje;
+END;
+$$;
+
 -- ==================================================
 -- POBLACIÓN DE TABLAS
 -- ==================================================

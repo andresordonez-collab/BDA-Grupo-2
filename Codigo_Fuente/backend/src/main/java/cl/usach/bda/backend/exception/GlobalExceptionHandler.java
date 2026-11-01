@@ -44,6 +44,11 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, "FINALIZAR_VIAJE_RECHAZADO", ex.getMessage());
     }
 
+    @ExceptionHandler(IniciarViajeNegocioException.class)
+    public ResponseEntity<Map<String, Object>> manejarIniciarViaje(IniciarViajeNegocioException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, "INICIAR_VIAJE_RECHAZADO", ex.getMessage());
+    }
+
     // 2. Argumentos inválidos o reglas de negocio en Service (400 Bad Request)
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<Map<String, Object>> manejarSolicitudInvalida(Exception ex) {
