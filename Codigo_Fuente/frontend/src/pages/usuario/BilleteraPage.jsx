@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import {
-  Alert, Box, Button, Dialog, DialogActions,
-  DialogContent, DialogContentText, DialogTitle,
-  LinearProgress, Paper, Typography,
+  Alert, Box, Button, LinearProgress, Paper,
+  Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Typography,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import billeteraService from '../../services/billeteraDemoService';
+import billeteraService from '../../services/billeteraService';
 import { getErrorMessage } from '../../http-common';
+import { formatearFechaHora } from '../../utils/formato';
 
 const moneda = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -15,94 +15,60 @@ const moneda = new Intl.NumberFormat('es-CL', {
   maximumFractionDigits: 2,
 });
 
-function mensajeError(error) {
-  return error?.isAxiosError
-    ? getErrorMessage(error)
-    : error?.message || 'No pudimos completar la simulación.';
-}
-
 export default function BilleteraPage() {
-  const { usuario } = useOutletContext();
-  const idUsuario = usuario?.idUsuario;
-
   const [billetera, setBilletera] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const [exito, setExito] = useState('');
   const [revision, setRevision] = useState(0);
-  const [confirmando, setConfirmando] = useState(false);
-  const [pagando, setPagando] = useState(false);
 
   const deuda = Math.max(0, -Number(billetera?.saldo ?? 0));
+  const movimientos = billetera?.movimientos ?? [];
 
   useEffect(() => {
-    let activo = true;
+    const controller = new AbortController();
 
     async function cargar() {
       setCargando(true);
       setError('');
 
       try {
-        const data = await billeteraService.getMiBilletera(idUsuario);
-        if (activo) {
+        const data = await billeteraService.getMiBilletera(controller.signal);
+
+        if (!controller.signal.aborted) {
           setBilletera(data);
         }
       } catch (err) {
-        if (activo) {
+        if (!controller.signal.aborted) {
           setBilletera(null);
-          setError(mensajeError(err));
+          setError(getErrorMessage(err));
         }
       } finally {
-        if (activo) {
+        if (!controller.signal.aborted) {
           setCargando(false);
         }
       }
     }
 
     cargar();
-    return () => {
-      activo = false;
-    };
-  }, [idUsuario, revision]);
-
-  async function pagarDeuda() {
-    if (pagando || cargando || deuda <= 0) return;
-
-    setPagando(true);
-    setError('');
-    setExito('');
-
-    try {
-      const resultado = await billeteraService.pagarDeudaSimulada(idUsuario);
-      setBilletera(resultado.billetera);
-      setConfirmando(false);
-      setExito(
-        `Pago simulado de ${moneda.format(resultado.monto)} realizado. No hubo un cobro real.`,
-      );
-    } catch (err) {
-      setConfirmando(false);
-      setError(mensajeError(err));
-    } finally {
-      setPagando(false);
-    }
-  }
+    return () => controller.abort();
+  }, [revision]);
 
   return (
-    <Box sx={{ maxWidth: 760 }}>
+    <Box sx={{ maxWidth: 960 }}>
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
             Mi billetera
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Consulta tu saldo y tus deudas pendientes.
+            Consulta tu saldo y tus últimos movimientos.
           </Typography>
         </Box>
 
         <Button
           variant="outlined"
           startIcon={<RefreshIcon />}
-          disabled={cargando || pagando || confirmando}
+          disabled={cargando}
           onClick={() => setRevision((valor) => valor + 1)}
         >
           Actualizar
@@ -111,15 +77,9 @@ export default function BilleteraPage() {
 
       {cargando && <LinearProgress aria-label="Cargando billetera" />}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {exito && <Alert severity="success" sx={{ mb: 2 }}>{exito}</Alert>}
 
       {!cargando && billetera && (
         <>
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Modo demostración: saldo y pagos ficticios.
-            La demostración se reinicia al recargar el navegador.
-          </Alert>
-
           <Paper
             variant="outlined"
             sx={{
@@ -129,86 +89,78 @@ export default function BilleteraPage() {
               background: 'linear-gradient(135deg, #ffffff, #e8f5ef)',
             }}
           >
-            <Typography color="text.secondary">
-              Saldo de demostración
-            </Typography>
+            <Typography color="text.secondary">Saldo actual</Typography>
             <Typography
               variant="h3"
               sx={{
                 mt: 2,
                 fontWeight: 700,
-                color: billetera.saldo < 0 ? 'error.main' : 'primary.main',
+                color: deuda > 0 ? 'error.main' : 'primary.main',
                 overflowWrap: 'anywhere',
               }}
             >
               {moneda.format(billetera.saldo)}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography color="text.secondary" sx={{ mt: 2 }}>
               Pesos chilenos · CLP
             </Typography>
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 3, mt: 3, borderRadius: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Deuda pendiente
-            </Typography>
+            <Typography variant="h6">Deuda pendiente</Typography>
             <Typography
               variant="h4"
-              sx={{
-                my: 2,
-                fontWeight: 700,
-                color: deuda > 0 ? 'error.main' : 'primary.main',
-              }}
+              sx={{ my: 2, color: deuda > 0 ? 'error.main' : 'primary.main' }}
             >
               {moneda.format(deuda)}
             </Typography>
 
-            {deuda === 0 && (
-              <Typography color="text.secondary" sx={{ mb: 2 }}>
-                No tienes deudas pendientes en esta demostración.
+            {deuda > 0 ? (
+              <>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  El pago de deudas desde esta pantalla estará disponible próximamente.
+                </Alert>
+                <Button variant="contained" disabled>Pagar deuda</Button>
+              </>
+            ) : (
+              <Typography color="text.secondary">
+                No tienes deudas pendientes.
               </Typography>
             )}
-
-            <Button
-              variant="contained"
-              disabled={pagando || deuda === 0}
-              onClick={() => setConfirmando(true)}
-            >
-              Simular pago de deuda
-            </Button>
           </Paper>
+
+          <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
+            Últimos movimientos
+          </Typography>
+
+          {movimientos.length === 0 ? (
+            <Alert severity="info">Todavía no tienes movimientos registrados.</Alert>
+          ) : (
+            <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+              <Table aria-label="Movimientos de mi billetera" sx={{ minWidth: 600 }}>
+                <TableHead sx={{ bgcolor: '#eaf5ef' }}>
+                  <TableRow>
+                    <TableCell>Fecha</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell align="right">Monto</TableCell>
+                    <TableCell align="right">Viaje</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {movimientos.map((movimiento) => (
+                    <TableRow key={movimiento.idMovimiento} hover>
+                      <TableCell>{formatearFechaHora(movimiento.fechaMovimiento)}</TableCell>
+                      <TableCell>{movimiento.tipoMovimiento?.replaceAll('_', ' ')}</TableCell>
+                      <TableCell align="right">{moneda.format(movimiento.monto)}</TableCell>
+                      <TableCell align="right">{movimiento.idViaje ?? '—'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </>
       )}
-
-      <Dialog
-        open={confirmando}
-        onClose={() => {
-          if (!pagando) setConfirmando(false);
-        }}
-        aria-labelledby="confirmar-pago-titulo"
-      >
-        <DialogTitle id="confirmar-pago-titulo">
-          Confirmar pago simulado
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Se simulará un aporte de {moneda.format(deuda)} para cubrir
-            tu saldo negativo. No se realizará ningún cobro real.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button disabled={pagando} onClick={() => setConfirmando(false)}>
-            Cancelar
-          </Button>
-          <Button
-            variant="contained"
-            disabled={pagando || deuda === 0}
-            onClick={pagarDeuda}
-          >
-            {pagando ? 'Procesando…' : 'Confirmar pago simulado'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

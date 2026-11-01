@@ -10,4 +10,12 @@ const update = (id, data) => http.put(`/api/billeteras/${id}`, data);
 
 const remove = (id) => http.delete(`/api/billeteras/${id}`);
 
-export default { getAll, get, create, update, remove };
+const getMiBilletera = async (signal) => {
+  const { data } = await http.get('/api/billeteras/mi-billetera', {
+    params: { limite: 20 },
+    signal,
+  });
+  return data;
+};
+
+export default { getAll, get, create, update, remove, getMiBilletera };
