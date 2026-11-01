@@ -1,7 +1,7 @@
 import { AppBar, Avatar, Box, Toolbar, Typography } from '@mui/material';
 import BotonSalir from '../common/BotonSalir';
 export default function AppHeader({ role, usuario, onLogout }) {
-  const nombre = usuario?.nombreUsuario ?? 'Operador';
+  const nombre = usuario?.nombreUsuario ?? role;
   const inicial = nombre.charAt(0).toUpperCase();
 
   return (
@@ -11,7 +11,7 @@ export default function AppHeader({ role, usuario, onLogout }) {
     >
       <Toolbar sx={{ gap: 2 }}>
         <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 700 }}>
-          Panel de operación
+          {role === 'Usuario' ? 'Mi cuenta' : 'Panel de operación'}
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -1,6 +1,6 @@
 import http from '../http-common';
 
-const getAll = () => http.get('/api/estaciones');
+const getAll = (signal) => http.get('/api/estaciones', { signal });
 
 const getDisponibilidad = () =>
   http.get('/api/estaciones/disponibilidad');

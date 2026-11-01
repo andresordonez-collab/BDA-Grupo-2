@@ -1,5 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { useEffect, useState } from 'react'; 
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+} from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -13,6 +19,12 @@ import RebalanceoPage from './pages/operador/RebalanceoPage';
 import AuditoriaPage from './pages/operador/AuditoriaPage';
 import DemandaPage from './pages/operador/DemandaPage';
 import authService from './services/authService';
+import { getErrorMessage, registrarSesionVencida } from './http-common';
+import HistorialPage from './pages/usuario/HistorialPage';
+import ResumenMensualPage from './pages/usuario/ResumenMensualPage';
+import MiViajePage from './pages/usuario/MiViajePage';
+
+
 
 const theme = createTheme({
   palette: {
@@ -31,92 +43,150 @@ const theme = createTheme({
   },
 });
 
+function RutaProtegida({ usuario, rol }) {
+  if (!usuario) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (usuario.rol.toLowerCase() !== rol) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return <Outlet />;
+}
+
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [verificandoSesion, setVerificandoSesion] = useState(true);
   const [errorSesion, setErrorSesion] = useState('');
-  const cerrarSesion = async () => {
-    await authService.logout();
-    setUsuario(null);
-  };
 
-  useEffect(() => {
-  let activo = true;
-
-  async function recuperarSesion() {
+  async function cerrarSesion() {
     try {
-      const perfil = await authService.me();
-
-      if (!perfil?.idUsuario || typeof perfil.rol !== 'string') {
-        throw new Error('Respuesta de sesión inválida');
-      }
-
-      if (activo) {
-        setUsuario(perfil);
-      }
+      await authService.logout();
     } catch (err) {
-      if (!activo) return;
-
-      if (err.response?.status === 401) {
-        setUsuario(null);
-      } else {
-        setErrorSesion('No pudimos comprobar tu sesión. Intenta nuevamente.');
-      }
-    } finally {
-      if (activo) {
-        setVerificandoSesion(false);
+      // Si la sesión ya venció, igualmente podemos salir del panel.
+      if (err.response?.status !== 401) {
+        throw err;
       }
     }
+
+    setUsuario(null);
   }
 
-  recuperarSesion();
+  useEffect(() => {
+    let activo = true;
 
-  return () => {
-    activo = false;
-  };
-}, []);
+    const retirarInterceptor = registrarSesionVencida(() => {
+      if (activo) {
+        setUsuario(null);
+        setErrorSesion('');
+      }
+    });
 
-if (verificandoSesion) {
-  return <p role="status">Comprobando sesión…</p>;
-}
+    async function recuperarSesion() {
+      try {
+        const perfil = await authService.me();
 
-if (errorSesion) {
-  return (
-    <div role="alert">
-      <p>{errorSesion}</p>
-      <button type="button" onClick={() => window.location.reload()}>
-        Reintentar
-      </button>
-    </div>
-  );
-}
+        if (!activo) return;
+
+        const rol = typeof perfil?.rol === 'string'
+          ? perfil.rol.toLowerCase()
+          : '';
+
+        if (!perfil?.idUsuario || !['usuario', 'operador'].includes(rol)) {
+          setErrorSesion('No pudimos identificar tu perfil de usuario.');
+          return;
+        }
+
+        setUsuario(perfil);
+      } catch (err) {
+        if (!activo) return;
+
+        if (err.response?.status === 401) {
+          setUsuario(null);
+        } else {
+          setErrorSesion(getErrorMessage(err));
+        }
+      } finally {
+        if (activo) {
+          setVerificandoSesion(false);
+        }
+      }
+    }
+
+    recuperarSesion();
+
+    return () => {
+      activo = false;
+      retirarInterceptor();
+    };
+  }, []);
+
+  if (verificandoSesion) {
+    return <p role="status">Comprobando sesión…</p>;
+  }
+
+  if (errorSesion) {
+    return (
+      <div role="alert">
+        <p>{errorSesion}</p>
+        <button type="button" onClick={() => window.location.reload()}>
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const inicio = usuario?.rol.toLowerCase() === 'operador'
+    ? '/operador/flota'
+    : '/usuario';
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
 
       <BrowserRouter>
         <Routes>
-          {/* Público */}
-          <Route path="/" element={<Login onLogin={setUsuario} />} />
+          <Route
+            path="/"
+            element={
+              usuario
+                ? <Navigate to={inicio} replace />
+                : <Login onLogin={setUsuario} />
+            }
+          />
+
           <Route path="/unauthorized" element={<Unauthorized />} />
 
-          {/* Usuario: se mantiene la pantalla actual mientras se migra */}
-          <Route path="/usuario" element={<PanelUsuario onLogout = {cerrarSesion} />} />
-
-          {/* Operador */}
-          <Route
-            path="/operador"
-            element={
-              <Layout role="Operador" usuario={usuario} onLogout={cerrarSesion} />
-            }
-          >
-            <Route index element={<Navigate to="/operador/flota" replace />} />
-
-            <Route path="flota" element={<FlotaPage />} />
-            <Route path="estaciones" element={<EstacionesPage />} />
-            <Route path="rebalanceo" element={<RebalanceoPage />} />
-            <Route path="auditoria" element={<AuditoriaPage />} />
-            <Route path="demanda" element={<DemandaPage />} />
+          <Route element={<RutaProtegida usuario={usuario} rol="usuario" />}>
+            <Route
+              path="/usuario"
+              element={<Layout role="Usuario" usuario={usuario} onLogout={cerrarSesion} />}
+            >
+              <Route index element={<PanelUsuario />} />
+              <Route path="historial" element={<HistorialPage />} />
+              <Route path="resumen-mensual" element={<ResumenMensualPage />} />
+              <Route path = "mi-viaje" element={<MiViajePage />} />
+            </Route>
+          </Route>
+          <Route element={<RutaProtegida usuario={usuario} rol="operador" />}>
+            <Route
+              path="/operador"
+              element={
+                <Layout
+                  role="Operador"
+                  usuario={usuario}
+                  onLogout={cerrarSesion}
+                />
+              }
+            >
+              <Route index element={<Navigate to="/operador/flota" replace />} />
+              <Route path="flota" element={<FlotaPage />} />
+              <Route path="estaciones" element={<EstacionesPage />} />
+              <Route path="rebalanceo" element={<RebalanceoPage />} />
+              <Route path="auditoria" element={<AuditoriaPage />} />
+              <Route path="demanda" element={<DemandaPage />} />
+            </Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
