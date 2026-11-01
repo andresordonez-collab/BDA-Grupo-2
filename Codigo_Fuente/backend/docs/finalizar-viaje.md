@@ -47,28 +47,3 @@ otro aislamiento. No hay reintentos automáticos de interbloqueos.
 
 Estación inexistente produce 409 antes de verificar propiedad; con estación
 existente, viajes inexistentes y ajenos producen el mismo 404.
-
-## Pruebas sin PostgreSQL
-
-Desde Codigo_Fuente/backend:
-
-```bash
-bash mvnw -B '-Dtest=Viaje*Test,Rebalanceo*Test,JwtAuthenticationFilterTest' test
-bash mvnw -B -DskipTests package
-```
-
-ViajeControllerTest usa la cadena real de seguridad, JWT de prueba, servicio real
-y repositorio simulado. ViajeServiceTest comprueba propiedad, orden y errores.
-ViajeRepositoryTest verifica SQL y parámetros con JDBC simulado.
-ViajeTransactionTest usa el proxy transaccional real y un gestor simulado para
-comprobar aislamiento, orden, commit y rollback. No prueba bloqueos PostgreSQL.
-
-Pendiente en PostgreSQL desechable: cambios en viajes, billeteras,
-movimientos_billeteras y vehiculos; actualización concurrente de propietario;
-doble finalización; último cupo; PA1 contra PA2 y reversión completa ante errores.
-Usar rollback para una conexión e instancia desechable para pruebas concurrentes
-con commits. Las secuencias no se revierten con rollback.
-
-Se conserva el comportamiento SQL respecto a saldo negativo, tarifas editables,
-hora de finalización e idempotencia. CSRF y usuarios desactivados tras emitir JWT
-siguen siendo decisiones pendientes de la seguridad general existente.

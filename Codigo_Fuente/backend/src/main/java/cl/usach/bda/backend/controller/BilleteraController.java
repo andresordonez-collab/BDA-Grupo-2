@@ -1,9 +1,11 @@
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.MiBilleteraDTO;
 import cl.usach.bda.backend.entities.BilleteraEntity;
 import cl.usach.bda.backend.service.BilleteraService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,14 @@ public class BilleteraController {
     public ResponseEntity<List<BilleteraEntity>> listarBilleteras() {
         return ResponseEntity.ok(billeteraService.listarBilleteras());
     }
+
+    // Billetera del usuario autenticado, con sus últimos movimientos.
+    @GetMapping("/mi-billetera")
+    public ResponseEntity<MiBilleteraDTO> miBilletera(
+            @RequestParam(name = "limite", required = false) Integer limite,
+            @AuthenticationPrincipal Long idUsuario) {
+        return ResponseEntity.ok(billeteraService.obtenerMiBilletera(idUsuario, limite));
+    }    
 
     @GetMapping("/{id}")
     public ResponseEntity<BilleteraEntity> obtenerPorId(@PathVariable("id") Long id) {

@@ -38,6 +38,8 @@ public class SecurityConfig {
                                 "/api/viajes/*/finalizar").hasRole("Usuario")
                         .requestMatchers(HttpMethod.GET, "/api/viajes/resumen-mensual",
                                 "/api/viajes/mis-viajes").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.GET, "/api/viajes/resumen-mensual",
+                                "/api/viajes/mis-viajes", "/api/billeteras/mi-billetera").hasRole("Usuario")
                         .requestMatchers(HttpMethod.GET, "/api/estaciones/**", "/api/tarifas/**",
                                 "/api/tipos-vehiculos/**").authenticated()
                         .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",

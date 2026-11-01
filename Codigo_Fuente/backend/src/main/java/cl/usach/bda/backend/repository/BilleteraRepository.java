@@ -1,10 +1,12 @@
 package cl.usach.bda.backend.repository;
 
+import cl.usach.bda.backend.dto.MovimientoBilleteraResumenDTO;
 import cl.usach.bda.backend.entities.BilleteraEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,5 +71,31 @@ public class BilleteraRepository {
         String sql = "DELETE FROM billeteras WHERE id_billetera = ?";
         int filasAfectadas = jdbcTemplate.update(sql, idBilletera);
         return filasAfectadas > 0;
+    }
+
+    // Billetera de un usuario (una por usuario).
+    public Optional<BilleteraEntity> findByIdUsuario(Long idUsuario) {
+        String sql = "SELECT * FROM billeteras WHERE id_usuario = ?";
+        return jdbcTemplate.query(sql, BILLETERAS_ROW_MAPPER, idUsuario)
+                .stream()
+                .findFirst();
+    }
+
+    // Últimos movimientos de una billetera, del más reciente al más antiguo.
+    public List<MovimientoBilleteraResumenDTO> listarMovimientosRecientes(Long idBilletera, int limite) {
+        String sql = """
+                SELECT id_movimiento, tipo_movimiento, monto, fecha_movimiento, id_viaje
+                FROM movimientos_billeteras
+                WHERE id_billetera = ?
+                ORDER BY fecha_movimiento DESC, id_movimiento DESC
+                LIMIT ?
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new MovimientoBilleteraResumenDTO(
+                rs.getLong("id_movimiento"),
+                rs.getString("tipo_movimiento"),
+                rs.getBigDecimal("monto"),
+                rs.getObject("fecha_movimiento", LocalDateTime.class),
+                rs.getObject("id_viaje", Long.class)
+        ), idBilletera, limite);
     }
 }
