@@ -260,6 +260,32 @@ AFTER UPDATE OF estado_vehiculo ON vehiculos
 FOR EACH ROW
 EXECUTE FUNCTION auditar_cambio_estado_vehiculo();
 
+-- trigger 3: Crear automáticamente una billetera con saldo cero para cada nuevo usuario con rol "Usuario".
+CREATE OR REPLACE FUNCTION crear_billetera_usuario()
+RETURNS TRIGGER
+AS
+$BODY$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM roles
+        WHERE id_rol = NEW.id_rol AND nombre_rol = 'Usuario'
+    ) THEN
+        INSERT INTO billeteras (id_usuario, saldo)
+        VALUES (NEW.id_usuario, 0.00)
+        ON CONFLICT (id_usuario) DO NOTHING;
+    END IF;
+
+    RETURN NEW;
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_crear_billetera_usuario
+AFTER INSERT OR UPDATE OF id_rol ON usuarios
+FOR EACH ROW
+EXECUTE FUNCTION crear_billetera_usuario();
+
 -- ==================================================
 -- PROCEDIMIENTO ALMACENADO 1: FINALIZAR VIAJE
 -- ==================================================
@@ -587,6 +613,10 @@ BEGIN
         RAISE EXCEPTION 'Error: El vehículo % no existe.', p_id_vehiculo;
     END IF;
 
+    IF NOT EXISTS (SELECT 1 FROM billeteras WHERE id_usuario = p_id_usuario) THEN
+        RAISE EXCEPTION 'Error: El usuario % no tiene una billetera asignada.', p_id_usuario;
+    END IF;
+    
     IF v_estado_vehiculo <> 'Disponible' OR v_id_estacion IS NULL THEN
         RAISE EXCEPTION 'Error: El vehículo % no está disponible.', p_id_vehiculo;
     END IF;

@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.repository;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -148,4 +149,26 @@ public class EstacionRepository {
                 )
         );
     }
+
+    // Vehículos disponibles y anclados en una estación (para elegir cuál tomar).
+    public List<VehiculoDisponibleDTO> listarVehiculosDisponibles(Long idEstacion) {
+        String sql = """
+                SELECT
+                    v.id_vehiculo,
+                    v.codigo_vehiculo,
+                    tv.nombre_tipo_vehiculo,
+                    v.nivel_bateria
+                FROM vehiculos v
+                JOIN tipos_vehiculos tv ON tv.id_tipo_vehiculo = v.id_tipo_vehiculo
+                WHERE v.id_estacion = ?
+                  AND v.estado_vehiculo = 'Disponible'
+                ORDER BY tv.nombre_tipo_vehiculo, v.codigo_vehiculo
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new VehiculoDisponibleDTO(
+                rs.getLong("id_vehiculo"),
+                rs.getString("codigo_vehiculo"),
+                rs.getString("nombre_tipo_vehiculo"),
+                rs.getObject("nivel_bateria", Integer.class)
+        ), idEstacion);
+    }    
 }

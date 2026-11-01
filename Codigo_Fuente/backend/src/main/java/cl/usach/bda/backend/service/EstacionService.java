@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.service;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import cl.usach.bda.backend.repository.EstacionRepository;
 import org.springframework.stereotype.Service;
@@ -58,4 +59,10 @@ public class EstacionService {
     public List<DisponibilidadEstacionDTO> obtenerDisponibilidad() {
         return estacionRepository.obtenerDisponibilidad();
     }
+
+    // Vehículos disponibles de una estación; 404 si la estación no existe.
+    public List<VehiculoDisponibleDTO> listarVehiculosDisponibles(Long idEstacion) {
+        obtenerEstacionPorId(idEstacion);
+        return estacionRepository.listarVehiculosDisponibles(idEstacion);
+    }    
 }

@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.service;
 
+import cl.usach.bda.backend.dto.AuditoriaVehiculoDetalleDTO;
 import cl.usach.bda.backend.entities.AuditoriaVehiculoEntity;
 import cl.usach.bda.backend.repository.AuditoriaVehiculoRepository;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,10 @@ public class AuditoriaVehiculoService {
         return repository.findAll();
     }
 
+    public List<AuditoriaVehiculoDetalleDTO> listarAuditoriasConDetalle() {
+        return repository.findAllConDetalle();
+    }
+        
     public AuditoriaVehiculoEntity obtenerAuditoriaVehiculoPorId(Long idAuditoria) {
         return repository.findById(idAuditoria)
                 .orElseThrow(() -> new NoSuchElementException("Auditoría de vehículo con ID " + idAuditoria + " no encontrada."));
