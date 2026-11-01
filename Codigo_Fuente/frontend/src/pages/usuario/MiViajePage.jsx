@@ -9,9 +9,28 @@ import estacionService from '../../services/estacionService';
 import { getErrorMessage } from '../../http-common';
 import { formatearFechaHora } from '../../utils/formato';
 
+// El backend valida la batería de los scooters al iniciar; aquí solo se evita elegir uno que se sabe que será rechazado.
+const BATERIA_MINIMA = 20;
+
+function bateriaInsuficiente(vehiculo) {
+  return typeof vehiculo.nivelBateria === 'number'
+    && vehiculo.nivelBateria < BATERIA_MINIMA;
+}
+
+function descripcionVehiculo(vehiculo) {
+  const base = `${vehiculo.tipoVehiculo} ${vehiculo.codigoVehiculo}`;
+  if (typeof vehiculo.nivelBateria !== 'number') return base;
+  const aviso = bateriaInsuficiente(vehiculo) ? ' (insuficiente)' : '';
+  return `${base} · batería ${vehiculo.nivelBateria}%${aviso}`;
+}
+
 export default function MiViajePage() {
   const [viajeActivo, setViajeActivo] = useState(null);
   const [estaciones, setEstaciones] = useState([]);
+  const [idEstacionOrigen, setIdEstacionOrigen] = useState('');
+  const [vehiculos, setVehiculos] = useState([]);
+  const [cargandoVehiculos, setCargandoVehiculos] = useState(false);
+  const [errorVehiculos, setErrorVehiculos] = useState('');
   const [idVehiculo, setIdVehiculo] = useState('');
   const [idDestino, setIdDestino] = useState('');
   const [cargando, setCargando] = useState(true);
@@ -59,6 +78,39 @@ export default function MiViajePage() {
     return () => controller.abort();
   }, [revision]);
 
+  // Al elegir una estación de origen se consultan sus vehículos disponibles.
+  useEffect(() => {
+    if (!idEstacionOrigen) return undefined;
+
+    const controller = new AbortController();
+
+    async function cargarVehiculos() {
+      setCargandoVehiculos(true);
+      setErrorVehiculos('');
+
+      try {
+        const { data } = await estacionService.getVehiculosDisponibles(
+          idEstacionOrigen,
+          controller.signal,
+        );
+        if (!controller.signal.aborted) setVehiculos(data);
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setVehiculos([]);
+          setErrorVehiculos(getErrorMessage(err));
+        }
+      } finally {
+        if (!controller.signal.aborted) setCargandoVehiculos(false);
+      }
+    }
+
+    cargarVehiculos();
+    return () => controller.abort();
+  }, [idEstacionOrigen, revision]);
+
+  // Sin estación elegida no hay vehículos que mostrar (evita restos de una consulta anterior).
+  const vehiculosDisponibles = idEstacionOrigen ? vehiculos : [];
+
   async function manejarViaje(event) {
     event.preventDefault();
     if (enviando || cargando || errorCarga) return;
@@ -69,7 +121,7 @@ export default function MiViajePage() {
       setErrorAccion(
         viajeActivo
           ? 'Selecciona una estación de destino.'
-          : 'Ingresa un identificador de vehículo entero y positivo.',
+          : 'Selecciona un vehículo disponible.',
       );
       return;
     }
@@ -87,6 +139,7 @@ export default function MiViajePage() {
         setExito(`El viaje #${resultado.idViaje} comenzó correctamente.`);
       }
 
+      setIdEstacionOrigen('');
       setIdVehiculo('');
       setIdDestino('');
     } catch (err) {
@@ -184,16 +237,74 @@ export default function MiViajePage() {
                       Comienza un nuevo recorrido
                     </Typography>
                     <TextField
-                      label="ID del vehículo"
-                      type="number"
-                      value={idVehiculo}
-                      onChange={(event) => setIdVehiculo(event.target.value)}
-                      helperText="Ingresa el identificador del vehículo que utilizarás."
-                      slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                      disabled={enviando}
+                      select
+                      label="Estación de origen"
+                      value={idEstacionOrigen}
+                      onChange={(event) => {
+                        setIdEstacionOrigen(event.target.value);
+                        setIdVehiculo('');
+                      }}
+                      helperText="Elige la estación donde tomarás el vehículo."
+                      disabled={enviando || estaciones.length === 0}
                       required
                       fullWidth
-                    />
+                    >
+                      {estaciones.map((estacion) => (
+                        <MenuItem
+                          key={estacion.idEstacion}
+                          value={String(estacion.idEstacion)}
+                        >
+                          {estacion.nombreEstacion}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    {estaciones.length === 0 && (
+                      <Alert severity="info">
+                        No hay estaciones activas para iniciar un viaje.
+                      </Alert>
+                    )}
+
+                    <TextField
+                      select
+                      label="Vehículo"
+                      value={idVehiculo}
+                      onChange={(event) => setIdVehiculo(event.target.value)}
+                      helperText="Solo se listan los vehículos disponibles en esa estación."
+                      disabled={
+                        enviando ||
+                        !idEstacionOrigen ||
+                        cargandoVehiculos ||
+                        vehiculosDisponibles.length === 0
+                      }
+                      required
+                      fullWidth
+                    >
+                      {vehiculosDisponibles.map((vehiculo) => (
+                        <MenuItem
+                          key={vehiculo.idVehiculo}
+                          value={String(vehiculo.idVehiculo)}
+                          disabled={bateriaInsuficiente(vehiculo)}
+                        >
+                          {descripcionVehiculo(vehiculo)}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    {cargandoVehiculos && (
+                      <LinearProgress aria-label="Consultando vehículos disponibles" />
+                    )}
+                    {errorVehiculos && (
+                      <Alert severity="error">{errorVehiculos}</Alert>
+                    )}
+                    {idEstacionOrigen &&
+                      !cargandoVehiculos &&
+                      !errorVehiculos &&
+                      vehiculosDisponibles.length === 0 && (
+                        <Alert severity="info">
+                          No hay vehículos disponibles en esta estación.
+                        </Alert>
+                      )}
                   </>
                 )}
 
@@ -203,7 +314,7 @@ export default function MiViajePage() {
                   size="large"
                   disabled={
                     enviando ||
-                    (viajeActivo ? !idDestino : !idVehiculo.trim())
+                    (viajeActivo ? !idDestino : !idVehiculo)
                   }
                 >
                   {enviando
