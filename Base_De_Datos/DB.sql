@@ -539,6 +539,30 @@ SELECT cron.schedule(
     $$SELECT fn_refrescar_demanda_estaciones();$$
 );
 
+-- Resumen mensual de un usuario: viajes finalizados que iniciaron en el mes,
+-- minutos totales y gasto. Si no hay viajes, devuelve ceros.
+CREATE OR REPLACE FUNCTION fn_resumen_mensual_usuario(
+    p_id_usuario BIGINT,
+    p_anio INT,
+    p_mes INT
+)
+RETURNS TABLE (
+    cantidad_viajes BIGINT,
+    minutos_totales BIGINT,
+    gasto_total NUMERIC
+)
+LANGUAGE sql STABLE AS $$
+    SELECT
+        COUNT(*),
+        COALESCE(SUM(minutos_viaje), 0),
+        COALESCE(SUM(costo), 0)
+    FROM viajes
+    WHERE id_usuario = p_id_usuario
+      AND estado_viaje = 'Finalizado'
+      AND fecha_inicio >= make_date(p_anio, p_mes, 1)
+      AND fecha_inicio <  make_date(p_anio, p_mes, 1) + INTERVAL '1 month';
+$$;
+
 -- ==================================================
 -- POBLACIÓN DE TABLAS
 -- ==================================================

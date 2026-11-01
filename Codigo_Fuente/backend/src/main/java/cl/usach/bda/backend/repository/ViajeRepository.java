@@ -4,6 +4,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.stereotype.Repository;
 
+import cl.usach.bda.backend.dto.ResumenMensualDTO;
+
 import java.util.Optional;
 
 @Repository
@@ -33,5 +35,18 @@ public class ViajeRepository {
             statement.execute();
             return null;
         });
+    }
+
+    // El cálculo vive en la BD (fn_resumen_mensual_usuario); aquí solo se llama y se mapea.
+    public ResumenMensualDTO obtenerResumenMensual(Long idUsuario, int anio, int mes) {
+        return jdbcTemplate.queryForObject(
+                "SELECT cantidad_viajes, minutos_totales, gasto_total FROM fn_resumen_mensual_usuario(?, ?, ?)",
+                (rs, row) -> new ResumenMensualDTO(
+                        anio,
+                        mes,
+                        rs.getLong("cantidad_viajes"),
+                        rs.getLong("minutos_totales"),
+                        rs.getBigDecimal("gasto_total")),
+                idUsuario, anio, mes);
     }
 }

@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.service;
 
+import cl.usach.bda.backend.dto.ResumenMensualDTO;
 import cl.usach.bda.backend.exception.FinalizarViajeNegocioException;
 import cl.usach.bda.backend.repository.ViajeRepository;
 import org.springframework.dao.DataAccessException;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -57,5 +59,22 @@ public class ViajeService {
 
     private static NoSuchElementException viajeNoEncontrado() {
         return new NoSuchElementException("Viaje no encontrado.");
+    }
+
+    // Sin anio/mes se usa el mes actual. Se valida antes de llegar a la BD: make_date falla con mes 13.
+    public ResumenMensualDTO resumenMensual(Long idUsuario, Integer anio, Integer mes) {
+        if (idUsuario == null || idUsuario <= 0) {
+            throw new IllegalArgumentException("El identificador de usuario debe ser un entero positivo.");
+        }
+        YearMonth actual = YearMonth.now();
+        int anioConsulta = anio != null ? anio : actual.getYear();
+        int mesConsulta = mes != null ? mes : actual.getMonthValue();
+        if (mesConsulta < 1 || mesConsulta > 12) {
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12.");
+        }
+        if (anioConsulta < 2000 || anioConsulta > 2100) {
+            throw new IllegalArgumentException("El año debe estar entre 2000 y 2100.");
+        }
+        return repository.obtenerResumenMensual(idUsuario, anioConsulta, mesConsulta);
     }
 }
