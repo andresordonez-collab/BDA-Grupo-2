@@ -112,7 +112,7 @@ export default function AuditoriaPage() {
     } catch (err) {
       if (err?.response?.status === 404) {
         setError(
-          'El endpoint /api/vehiculos/auditorias aún no está implementado en backend.'
+          'Los registros de auditoría no están disponibles por el momento.'
         );
       } else {
         setError(getErrorMessage(err));

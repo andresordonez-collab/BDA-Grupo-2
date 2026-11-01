@@ -37,6 +37,14 @@ export function getErrorMessage(error) {
     return 'No pudimos conectar con el servidor. Intenta nuevamente.';
   }
 
+  if (status === 404) {
+    return 'La información solicitada no está disponible por el momento.';
+  }
+
+  if (status >= 500) {
+    return 'No pudimos completar la solicitud. Intenta nuevamente más tarde.';
+  }
+
   return (
     data?.mensaje ??
     data?.message ??

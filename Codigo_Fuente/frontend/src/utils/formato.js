@@ -1,3 +1,9 @@
+export const formatoCLP = new Intl.NumberFormat('es-CL', {
+  style: 'currency',
+  currency: 'CLP',
+  maximumFractionDigits: 0,
+});
+
 export function formatearFechaHora(valor) {
   if (!valor) return '—';
 

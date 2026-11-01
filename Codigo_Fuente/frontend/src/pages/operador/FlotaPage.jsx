@@ -24,7 +24,11 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import vehiculoService from '../../services/vehiculoService';
+import tipoVehiculoService from '../../services/tipoVehiculoService';
+import estacionService from '../../services/estacionService';
+import VehiculoFormDialog from '../../components/operador/VehiculoFormDialog';
 import { getErrorMessage } from '../../http-common';
 
 const ESTADOS = ['Disponible', 'En uso', 'En mantención', 'Dado de baja'];
@@ -42,6 +46,14 @@ function normalizarVehiculo(vehiculo) {
   return {
     id,
     codigo: vehiculo.codigoVehiculo ?? vehiculo.codigo_vehiculo ?? `#${id}`,
+    codigoVehiculo:
+      vehiculo.codigoVehiculo ?? vehiculo.codigo_vehiculo ?? '',
+    idTipoVehiculo:
+      vehiculo.idTipoVehiculo ?? vehiculo.id_tipo_vehiculo ?? null,
+    nivelBateria:
+      vehiculo.nivelBateria ?? vehiculo.nivel_bateria ?? null,
+    estadoVehiculo:
+      vehiculo.estadoVehiculo ?? vehiculo.estado_vehiculo ?? 'Disponible',
     tipo:
       vehiculo.nombreTipoVehiculo ??
       vehiculo.tipoVehiculo ??
@@ -106,6 +118,11 @@ export default function FlotaPage() {
   const [motivo, setMotivo] = useState('');
   const [guardando, setGuardando] = useState(false);
 
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [vehiculoEditando, setVehiculoEditando] = useState(null);
+  const [tiposCatalogo, setTiposCatalogo] = useState([]);
+  const [estacionesCatalogo, setEstacionesCatalogo] = useState([]);
+
   const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
@@ -123,6 +140,31 @@ export default function FlotaPage() {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  useEffect(() => {
+    let activo = true;
+
+    Promise.allSettled([
+      tipoVehiculoService.getAll(),
+      estacionService.getAll(),
+    ]).then(([resTipos, resEstaciones]) => {
+      if (!activo) return;
+
+      if (resTipos.status === 'fulfilled') {
+        const data = resTipos.value.data;
+        setTiposCatalogo(Array.isArray(data) ? data : []);
+      }
+
+      if (resEstaciones.status === 'fulfilled') {
+        const data = resEstaciones.value.data;
+        setEstacionesCatalogo(Array.isArray(data) ? data : []);
+      }
+    });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const estaciones = useMemo(() => {
     const mapa = new Map();
@@ -245,6 +287,32 @@ export default function FlotaPage() {
     }
   };
 
+  const abrirCrearVehiculo = () => {
+    setVehiculoEditando(null);
+    setError('');
+    setExito('');
+    setFormAbierto(true);
+  };
+
+  const abrirEditarVehiculo = (vehiculo) => {
+    setVehiculoEditando(vehiculo);
+    setError('');
+    setExito('');
+    setFormAbierto(true);
+  };
+
+  const cerrarFormulario = () => {
+    setFormAbierto(false);
+    setVehiculoEditando(null);
+  };
+
+  const vehiculoGuardado = async () => {
+    setFormAbierto(false);
+    setVehiculoEditando(null);
+    setExito('Vehículo guardado correctamente.');
+    await cargar();
+  };
+
   const tarjetas = [
     { label: 'Total', valor: resumen.total },
     { label: 'Disponibles', valor: resumen.disponibles },
@@ -254,9 +322,28 @@ export default function FlotaPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: 700 }} gutterBottom>
-        Flota
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Flota
+        </Typography>
+
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={abrirCrearVehiculo}
+        >
+          Nuevo vehículo
+        </Button>
+      </Box>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Revisa los vehículos registrados, su estación, batería y estado
@@ -437,13 +524,29 @@ export default function FlotaPage() {
                     <EstadoChip estado={vehiculo.estado} />
                   </TableCell>
                   <TableCell align="right">
-                    <Button
-                      size="small"
-                      startIcon={<EditIcon />}
-                      onClick={() => abrirDialogo(vehiculo)}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 0.5,
+                        flexWrap: 'wrap',
+                      }}
                     >
-                      Cambiar estado
-                    </Button>
+                      <Button
+                        size="small"
+                        onClick={() => abrirEditarVehiculo(vehiculo)}
+                      >
+                        Editar
+                      </Button>
+
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => abrirDialogo(vehiculo)}
+                      >
+                        Cambiar estado
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -524,6 +627,15 @@ export default function FlotaPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <VehiculoFormDialog
+        abierto={formAbierto}
+        vehiculo={vehiculoEditando}
+        tipos={tiposCatalogo}
+        estaciones={estacionesCatalogo}
+        onCerrar={cerrarFormulario}
+        onGuardado={vehiculoGuardado}
+      />
     </Box>
   );
 }

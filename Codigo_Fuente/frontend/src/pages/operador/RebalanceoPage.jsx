@@ -4,9 +4,16 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   MenuItem,
   Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from '@mui/material';
@@ -14,6 +21,9 @@ import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import estacionService from '../../services/estacionService';
 import rebalanceoService from '../../services/rebalanceoService';
+import ordenRebalanceoService from '../../services/ordenRebalanceoService';
+import usuarioService from '../../services/usuarioService';
+import { formatearFechaHora } from '../../utils/formato';
 import { getErrorMessage } from '../../http-common';
 
 function idDe(objeto) {
@@ -100,6 +110,11 @@ export default function RebalanceoPage() {
   const [cantidad, setCantidad] = useState('1');
   const [enviando, setEnviando] = useState(false);
 
+  const [ordenes, setOrdenes] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [cargandoOrdenes, setCargandoOrdenes] = useState(true);
+  const [errorOrdenes, setErrorOrdenes] = useState('');
+
   const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
@@ -142,7 +157,7 @@ export default function RebalanceoPage() {
       } else if (disponibilidad.length > 0) {
         setEstaciones(disponibilidad.map(desdeDisponibilidad));
         setAviso(
-          'El endpoint /api/estaciones aún no está disponible. Solo se muestran estaciones con vehículos disponibles.'
+          'Algunos datos de las estaciones no están disponibles. Solo se muestran estaciones con vehículos disponibles.'
         );
       } else {
         const motivo =
@@ -159,9 +174,55 @@ export default function RebalanceoPage() {
     }
   }, []);
 
+  const cargarOrdenes = useCallback(async () => {
+    setCargandoOrdenes(true);
+    setErrorOrdenes('');
+
+    try {
+      const { data } = await ordenRebalanceoService.getAll();
+      setOrdenes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setErrorOrdenes(getErrorMessage(err));
+    } finally {
+      setCargandoOrdenes(false);
+    }
+  }, []);
+
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  useEffect(() => {
+    let activo = true;
+
+    cargarOrdenes();
+
+    usuarioService
+      .getAll()
+      .then(({ data }) => {
+        if (activo) {
+          setUsuarios(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        if (activo) {
+          setUsuarios([]);
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [cargarOrdenes]);
+
+  const nombreEstacion = (id) =>
+    estaciones.find((estacion) => estacion.id === String(id))
+      ?.nombre ?? `#${id}`;
+
+  const nombreOperador = (id) =>
+    usuarios.find(
+      (usuario) => String(usuario.idUsuario) === String(id)
+    )?.nombreUsuario ?? `Operador #${id}`;
 
   const origen = useMemo(
     () => estaciones.find((estacion) => estacion.id === origenId) ?? null,
@@ -242,6 +303,7 @@ export default function RebalanceoPage() {
       );
       setCantidad('1');
       await cargar();
+      await cargarOrdenes();
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -455,13 +517,115 @@ export default function RebalanceoPage() {
             </Box>
 
             <Alert severity="info" sx={{ mt: 3 }}>
-              El backend ejecuta rebalancear_flota en una sola
-              transacción. Si no hay vehículos suficientes o falta
-              capacidad, no se modifica nada.
+              La operación se realiza de forma segura: si no hay
+              vehículos suficientes o falta capacidad, no se modifica
+              nada.
             </Alert>
           </Paper>
         </Box>
       )}
+
+      <Paper variant="outlined" sx={{ mt: 3 }}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Historial de órdenes
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Últimos rebalanceos registrados en la base de datos.
+          </Typography>
+        </Box>
+
+        {errorOrdenes && (
+          <Alert
+            severity="warning"
+            sx={{ m: 2 }}
+            onClose={() => setErrorOrdenes('')}
+          >
+            {errorOrdenes}
+          </Alert>
+        )}
+
+        {cargandoOrdenes ? (
+          <Box
+            sx={{
+              py: 4,
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <CircularProgress size={28} />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table sx={{ minWidth: 850 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Origen</TableCell>
+                  <TableCell>Destino</TableCell>
+                  <TableCell align="right">Cantidad</TableCell>
+                  <TableCell>Operador</TableCell>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Estado</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {ordenes.map((orden) => (
+                  <TableRow key={orden.idOrden} hover>
+                    <TableCell>{orden.idOrden}</TableCell>
+                    <TableCell>
+                      {nombreEstacion(orden.idEstacionOrigen)}
+                    </TableCell>
+                    <TableCell>
+                      {nombreEstacion(orden.idEstacionDestino)}
+                    </TableCell>
+                    <TableCell align="right">
+                      {orden.cantidadVehiculos}
+                    </TableCell>
+                    <TableCell>
+                      {nombreOperador(orden.idOperador)}
+                    </TableCell>
+                    <TableCell>
+                      {formatearFechaHora(orden.fechaOrden)}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        color={
+                          orden.estadoOrden === 'Completada'
+                            ? 'success'
+                            : 'default'
+                        }
+                        label={orden.estadoOrden}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+                {ordenes.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      align="center"
+                      sx={{ py: 4 }}
+                    >
+                      <Typography color="text.secondary">
+                        No hay órdenes de rebalanceo registradas.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
     </Box>
   );
 }

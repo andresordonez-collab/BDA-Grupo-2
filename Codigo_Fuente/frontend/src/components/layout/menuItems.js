@@ -4,6 +4,10 @@ import PlaceIcon from '@mui/icons-material/Place';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import HistoryIcon from '@mui/icons-material/History';
 import InsightsIcon from '@mui/icons-material/Insights';
+import PriceChangeIcon from '@mui/icons-material/PriceChange';
+import PeopleIcon from '@mui/icons-material/People';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 export const DRAWER_WIDTH = 240;
 
@@ -14,6 +18,18 @@ export const MENU_BY_ROLE = {
     { label: 'Rebalanceo', path: '/operador/rebalanceo', icon: SwapHorizIcon },
     { label: 'Auditoría', path: '/operador/auditoria', icon: HistoryIcon },
     { label: 'Demanda', path: '/operador/demanda', icon: InsightsIcon },
+    { label: 'Tarifas', path: '/operador/tarifas', icon: PriceChangeIcon },
+    { label: 'Usuarios', path: '/operador/usuarios', icon: PeopleIcon },
+    {
+      label: 'Billeteras',
+      path: '/operador/billeteras',
+      icon: AccountBalanceWalletIcon,
+    },
+    {
+      label: 'Movimientos',
+      path: '/operador/movimientos-billeteras',
+      icon: ReceiptLongIcon,
+    },
   ],
 
   Usuario: [

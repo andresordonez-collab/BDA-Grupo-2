@@ -98,7 +98,7 @@ export default function DemandaPage() {
     } catch (err) {
       if (err?.response?.status === 404) {
         setError(
-          'El endpoint /api/reportes/demanda-estacion-horaria aún no está implementado en backend.'
+          'La información de demanda no está disponible por el momento.'
         );
       } else {
         setError(getErrorMessage(err));
@@ -257,12 +257,6 @@ export default function DemandaPage() {
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Viajes iniciados y finalizados por estación y franja horaria.
       </Typography>
-
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Datos de la vista materializada mv_demanda_estacion_horaria.
-        Se refresca automáticamente cada hora; “Actualizar” solo
-        vuelve a consultar la vista.
-      </Alert>
 
       {error && (
         <Alert

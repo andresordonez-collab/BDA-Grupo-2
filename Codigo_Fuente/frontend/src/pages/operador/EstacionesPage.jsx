@@ -20,7 +20,10 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
 import estacionService from '../../services/estacionService';
+import EstacionFormDialog from '../../components/operador/EstacionFormDialog';
 import { getErrorMessage } from '../../http-common';
 
 const FILTROS_ACTIVA = [
@@ -72,6 +75,8 @@ function normalizarEstacion(estacion, disponibilidad) {
       estacion.nombre_estacion ??
       `Estación #${id}`,
     direccion: estacion.direccion ?? '—',
+    latitud: estacion.latitud ?? null,
+    longitud: estacion.longitud ?? null,
     capacidad: capacidad === null ? null : Number(capacidad),
     ocupacion: ocupacion === null ? null : Number(ocupacion),
     activa: activa === null ? null : Boolean(activa),
@@ -205,6 +210,8 @@ export default function EstacionesPage() {
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroActiva, setFiltroActiva] = useState('');
+  const [formAbierto, setFormAbierto] = useState(false);
+  const [estacionEditando, setEstacionEditando] = useState(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -248,7 +255,7 @@ export default function EstacionesPage() {
       } else if (disponibilidad.length > 0) {
         setEstaciones(disponibilidad.map(desdeDisponibilidad));
         setAviso(
-          'El endpoint /api/estaciones aún no está disponible. Se muestra solo la disponibilidad parcial.'
+          'Algunos datos de las estaciones no están disponibles. Se muestra la información de disponibilidad.'
         );
       } else {
         const motivo =
@@ -342,6 +349,32 @@ export default function EstacionesPage() {
     setFiltroActiva('');
   };
 
+  const abrirCrearEstacion = () => {
+    setEstacionEditando(null);
+    setError('');
+    setAviso('');
+    setFormAbierto(true);
+  };
+
+  const abrirEditarEstacion = (estacion) => {
+    setEstacionEditando(estacion);
+    setError('');
+    setAviso('');
+    setFormAbierto(true);
+  };
+
+  const cerrarFormulario = () => {
+    setFormAbierto(false);
+    setEstacionEditando(null);
+  };
+
+  const estacionGuardada = async () => {
+    setFormAbierto(false);
+    setEstacionEditando(null);
+    setAviso('Estación guardada correctamente.');
+    await cargar();
+  };
+
   const tarjetas = [
     { label: 'Estaciones', valor: resumen.total },
     {
@@ -370,9 +403,28 @@ export default function EstacionesPage() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ fontWeight: 700 }} gutterBottom>
-        Estaciones
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          mb: 2,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Estaciones
+        </Typography>
+
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={abrirCrearEstacion}
+        >
+          Nueva estación
+        </Button>
+      </Box>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
         Revisa la capacidad, ocupación y disponibilidad de cada estación.
@@ -496,6 +548,7 @@ export default function EstacionesPage() {
                 <TableCell>Disponibles</TableCell>
                 <TableCell>Batería promedio</TableCell>
                 <TableCell>Estado</TableCell>
+                <TableCell align="right">Acciones</TableCell>
               </TableRow>
             </TableHead>
 
@@ -534,12 +587,22 @@ export default function EstacionesPage() {
                   <TableCell>
                     <EstadoEstacion activa={estacion.activa} />
                   </TableCell>
+
+                  <TableCell align="right">
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => abrirEditarEstacion(estacion)}
+                    >
+                      Editar
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
 
               {filtradas.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 5 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 5 }}>
                     <Typography color="text.secondary">
                       {estaciones.length === 0
                         ? 'No hay estaciones registradas.'
@@ -552,6 +615,13 @@ export default function EstacionesPage() {
           </Table>
         </TableContainer>
       )}
+
+      <EstacionFormDialog
+        abierto={formAbierto}
+        estacion={estacionEditando}
+        onCerrar={cerrarFormulario}
+        onGuardado={estacionGuardada}
+      />
     </Box>
   );
 }
