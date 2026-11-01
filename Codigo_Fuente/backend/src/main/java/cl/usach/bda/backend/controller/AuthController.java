@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,18 +41,39 @@ public class AuthController {
     public ResponseEntity<SesionDTO> login(@Valid @RequestBody LoginRequestDTO solicitud) {
         return authService.autenticar(solicitud.email(), solicitud.password())
                 .map(resultado -> ResponseEntity.ok()
-                        .header(HttpHeaders.SET_COOKIE, crearCookie(resultado.token()).toString())
+                        .header(HttpHeaders.SET_COOKIE,
+                                crearCookie(resultado.token(), Duration.ofMillis(jwtService.getExpiracionMs())).toString())
                         .body(resultado.sesion()))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
-    private ResponseCookie crearCookie(String token) {
-        return ResponseCookie.from(COOKIE_TOKEN, token)
+    // El id sale del JWT (principal establecido por JwtAuthenticationFilter); los datos, de la BD.
+    @GetMapping("/me")
+    public ResponseEntity<SesionDTO> me(@AuthenticationPrincipal Long idUsuario) {
+        return authService.obtenerSesion(idUsuario)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .header(HttpHeaders.SET_COOKIE, crearCookie("", Duration.ZERO).toString())
+                        .build());
+    }
+
+    // Público a propósito: cerrar sesión con una cookie vencida o ausente no debe fallar.
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, crearCookie("", Duration.ZERO).toString())
+                .build();
+    }
+
+    // Para borrar la cookie hay que repetir los mismos atributos (path, SameSite, etc.)
+    // con Max-Age=0; si no coinciden, el navegador la trata como otra cookie y no la borra.
+    private ResponseCookie crearCookie(String valor, Duration duracion) {
+        return ResponseCookie.from(COOKIE_TOKEN, valor)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite("Lax")
                 .path("/")
-                .maxAge(Duration.ofMillis(jwtService.getExpiracionMs()))
+                .maxAge(duracion)
                 .build();
     }
 }

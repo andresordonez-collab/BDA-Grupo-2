@@ -13,12 +13,12 @@ public class RebalanceoRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void rebalancear(RebalanceoRequestDTO solicitud) {
+    public void rebalancear(RebalanceoRequestDTO solicitud, Long idOperador) {
         jdbcTemplate.execute("CALL rebalancear_flota(?, ?, ?, ?)",
                 (PreparedStatementCallback<Void>) statement -> {
                     statement.setLong(1, solicitud.idEstacionOrigen());
                     statement.setLong(2, solicitud.idEstacionDestino());
-                    statement.setLong(3, solicitud.idOperador());
+                    statement.setLong(3, idOperador);
                     statement.setInt(4, solicitud.cantidadVehiculos());
                     statement.execute();
                     return null;

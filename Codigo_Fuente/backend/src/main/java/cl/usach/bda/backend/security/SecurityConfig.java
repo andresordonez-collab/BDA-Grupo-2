@@ -28,8 +28,12 @@ public class SecurityConfig {
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(rutas -> rutas
-                        .requestMatchers("/api/auth/login", "/error").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/logout", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/viajes/*/finalizar").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.GET, "/api/estaciones/**", "/api/tarifas/**",
+                                "/api/tipos-vehiculos/**").authenticated()
+                        .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",
+                                "/api/roles/**", "/api/rebalanceos/**").hasRole("Operador")
                         .anyRequest().authenticated()
                 );
         return http.build();

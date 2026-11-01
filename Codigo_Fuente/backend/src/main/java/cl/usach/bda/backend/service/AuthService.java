@@ -38,4 +38,12 @@ public class AuthService {
                                 usuario.email(), usuario.rol())
                 ));
     }
+
+    // El token solo dice quién es; el estado real (activo, rol vigente) se lee de la BD.
+    public Optional<SesionDTO> obtenerSesion(Long idUsuario) {
+        return usuarioRepository.buscarPorId(idUsuario)
+                .filter(usuario -> Boolean.TRUE.equals(usuario.usuarioActivo()))
+                .map(usuario -> new SesionDTO(usuario.idUsuario(), usuario.nombreUsuario(),
+                        usuario.email(), usuario.rol()));
+    }
 }
