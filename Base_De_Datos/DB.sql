@@ -662,6 +662,10 @@ INSERT INTO roles (id_rol, nombre_rol) VALUES
 -- Cada usuario tiene su propio hash BCrypt con sal aleatoria (costo 12).
 -- Credenciales destinadas únicamente a pruebas locales del proyecto.
 -- Joaquín Díaz permanece inactivo: su login debe devolver 401 aunque la contraseña coincida.
+
+-- Los seeders cargan sus propias billeteras: el trigger se desactiva mientras se insertan los usuarios.
+ALTER TABLE usuarios DISABLE TRIGGER trigger_crear_billetera_usuario;
+
 INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, usuario_activo, fecha_registro) VALUES
     (1, 1, 'Camila Torres', 'camila.operadora@example.com', '$2b$12$.AOSg8WLAsw10VVQlQulEOAekY/IzNxg2z0IeaPrSAfFTjSZx05U2', TRUE, '2026-10-01 08:00:00'),
     (2, 1, 'Diego Rojas', 'diego.operador@example.com', '$2b$12$VieRQxDOuBcFC3GI5Ay53OsZT6YSS4H4j.p3ONlHBzdXyNr9bVGy6', TRUE, '2026-10-01 08:05:00'),
@@ -683,6 +687,9 @@ INSERT INTO billeteras (id_billetera, id_usuario, saldo) VALUES
     (6, 8, 16700.00),
     (7, 9, -340.00),
     (8, 10, 15900.00);
+
+-- Con las billeteras de prueba cargadas, el trigger vuelve a quedar activo para los usuarios nuevos.
+ALTER TABLE usuarios ENABLE TRIGGER trigger_crear_billetera_usuario;
 
 INSERT INTO estaciones (id_estacion, nombre_estacion, direccion, latitud, longitud, capacidad, estacion_activa) VALUES
     (1, 'Plaza de Armas', 'Plaza de Armas 100, Santiago', -33.437200, -70.650600, 20, TRUE),
