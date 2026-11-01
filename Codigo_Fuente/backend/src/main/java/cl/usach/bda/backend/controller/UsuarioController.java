@@ -1,8 +1,11 @@
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.ResumenMensualDTO;
 import cl.usach.bda.backend.dto.UsuarioResponseDTO;
 import cl.usach.bda.backend.entities.UsuarioEntity;
 import cl.usach.bda.backend.service.UsuarioService;
+import cl.usach.bda.backend.service.ViajeService;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +17,11 @@ import java.util.List;
 public class UsuarioController {
 
     private final UsuarioService service;
+    private final ViajeService viajeService;
 
-    public UsuarioController(UsuarioService service) {
+    public UsuarioController(UsuarioService service, ViajeService viajeService) {
         this.service = service;
+        this.viajeService = viajeService;
     }
 
     // Endpoint para crear un nuevo usuario.
@@ -51,5 +56,15 @@ public class UsuarioController {
     public ResponseEntity<Void> eliminarUsuario(@PathVariable("id") Long id) {
         service.eliminarUsuario(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Resumen mensual de cualquier usuario (ruta solo para Operador).
+    @GetMapping("/{id}/resumen-mensual")
+    public ResponseEntity<ResumenMensualDTO> resumenMensual(
+            @PathVariable("id") Long id,
+            @RequestParam(name = "anio", required = false) Integer anio,
+            @RequestParam(name = "mes", required = false) Integer mes) {
+        service.obtenerUsuarioPorId(id); // 404 si el usuario no existe
+        return ResponseEntity.ok(viajeService.resumenMensual(id, anio, mes));
     }
 }
