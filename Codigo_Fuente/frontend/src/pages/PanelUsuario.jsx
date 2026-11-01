@@ -1,5 +1,4 @@
 import {useEffect, useState} from "react";
-import { useNavigate } from 'react-router-dom';
 import {GetEstacionesDisponibles} from "../services/api";
 import {
   Paper,
@@ -20,8 +19,10 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import './PanelUsuario.css';
+import { getErrorMessage } from '../http-common';
 
-function PanelUsuario({onLogout}) {
+
+function PanelUsuario() {
     // Estado para almacenar las estaciones disponibles, estados de carga y errores
     const [estacionesDisponibles, setEstacionesDisponibles] = useState([]);
     const [cargando, setCargando] = useState(true);
@@ -38,8 +39,7 @@ function PanelUsuario({onLogout}) {
         }
 
         catch (err) {
-            console.error("Error al conectar con Spring Boot:", err);
-            setError("No se pudo cargar la estaciones disponibles.");
+            setError(getErrorMessage(err));
         }
 
         finally {
@@ -56,26 +56,6 @@ function PanelUsuario({onLogout}) {
         .toLowerCase()
         .includes(busqueda.trim().toLowerCase())
     );
-
-    const [cerrandoSesion, setCerrandoSesion] = useState(false);
-    const navigate = useNavigate();
-
-    const manejarCerrarSesion = async () => {
-        if (cerrandoSesion) return;
-
-        setCerrandoSesion(true);
-        setError(null);
-
-        try {
-            await onLogout();
-            navigate('/', { replace: true });
-        } catch {
-            setError('No pudimos cerrar sesión. Intenta nuevamente.');
-        } finally {
-            setCerrandoSesion(false);
-        }
-    };
-
 
     const totalBicicletas = estacionesDisponibles.reduce((total, estacion) => total + estacion.cantidadBicicletas, 0);
 
@@ -154,17 +134,9 @@ function PanelUsuario({onLogout}) {
             variant="outlined"
             startIcon={<RefreshIcon />}
             onClick={cargarEstacionesDisponibles}
-            disabled={cargando || cerrandoSesion}
+            disabled={cargando}
         >
             {cargando ? 'Actualizando…' : 'Actualizar'}
-        </Button>
-
-        <Button
-            variant="contained"
-            onClick={manejarCerrarSesion}
-            disabled={cerrandoSesion}
-        >
-            {cerrandoSesion ? 'Saliendo…' : 'Salir'}
         </Button>
         </Box>
 

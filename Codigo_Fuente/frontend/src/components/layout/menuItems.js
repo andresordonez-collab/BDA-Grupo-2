@@ -16,8 +16,14 @@ export const MENU_BY_ROLE = {
     { label: 'Demanda', path: '/operador/demanda', icon: InsightsIcon },
   ],
 
-  // Tu compañero puede completar este menú cuando migre el panel de usuario.
   Usuario: [
-    { label: 'Resumen', path: '/usuario', icon: DashboardIcon },
+    { label: 'Estaciones', path: '/usuario', icon: PlaceIcon },
+    { label: 'Mi viaje', path: '/usuario/mi-viaje', icon: DirectionsBikeIcon },
+    { label: 'Historial', path: '/usuario/historial', icon: HistoryIcon },
+    {
+      label: 'Resumen mensual',
+      path: '/usuario/resumen-mensual',
+      icon: DashboardIcon,
+    },
   ],
 };
