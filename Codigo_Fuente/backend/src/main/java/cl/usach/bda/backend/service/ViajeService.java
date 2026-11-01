@@ -1,7 +1,9 @@
 package cl.usach.bda.backend.service;
 
 import cl.usach.bda.backend.dto.ResumenMensualDTO;
+import cl.usach.bda.backend.dto.ViajeHistorialDTO;
 import cl.usach.bda.backend.exception.FinalizarViajeNegocioException;
+import cl.usach.bda.backend.exception.IniciarViajeNegocioException;
 import cl.usach.bda.backend.repository.ViajeRepository;
 import org.springframework.dao.DataAccessException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -18,7 +20,14 @@ import java.util.NoSuchElementException;
 public class ViajeService {
     private static final List<String> RECHAZOS = List.of(
             "Error: La estación de destino ", "Error: El viaje ");
+
     private final ViajeRepository repository;
+
+    // Rechazos de fn_iniciar_viaje y de trigger_validar_inicio_viaje que se muestran al cliente.
+    private static final List<String> RECHAZOS_INICIO = List.of(
+            "No puede iniciar el viaje", "Nivel de batería insuficiente",
+            "El usuario ya tiene un viaje en curso", "Error: El usuario ",
+            "Error: El vehículo ", "Error: No hay una tarifa activa");
 
     public ViajeService(ViajeRepository repository) {
         this.repository = repository;
@@ -76,5 +85,49 @@ public class ViajeService {
             throw new IllegalArgumentException("El año debe estar entre 2000 y 2100.");
         }
         return repository.obtenerResumenMensual(idUsuario, anioConsulta, mesConsulta);
+    }
+
+    // Inicia un viaje: valida al usuario y al vehículo, crea el viaje con la tarifa vigente
+    // y saca el vehículo de la estación, todo en una sola transacción.
+    public Long iniciar(Long idVehiculo, Long idUsuario) {
+        if (idUsuario == null || idUsuario <= 0) {
+            throw new AuthenticationCredentialsNotFoundException("Se requiere un usuario autenticado.");
+        }
+        if (idVehiculo == null || idVehiculo <= 0) {
+            throw new IllegalArgumentException("El identificador del vehículo debe ser un entero positivo.");
+        }
+        try {
+            return repository.iniciar(idUsuario, idVehiculo);
+        } catch (DataAccessException exception) {
+            for (Throwable cause = exception.getCause(); cause != null; cause = cause.getCause()) {
+                if (cause instanceof SQLException sql && "P0001".equals(sql.getSQLState())
+                        && sql.getMessage() != null) {
+                    String mensaje = mensajePrincipal(sql.getMessage());
+                    if (RECHAZOS_INICIO.stream().anyMatch(mensaje::startsWith)) {
+                        throw new IniciarViajeNegocioException(
+                                mensaje.startsWith("Error: ") ? mensaje.substring("Error: ".length()) : mensaje,
+                                exception);
+                    }
+                }
+            }
+            throw exception;
+        }
+    }
+
+    // El mensaje del driver trae "ERROR: " y líneas de contexto (Where:); solo sirve la primera.
+    private static String mensajePrincipal(String mensajeSql) {
+        String primera = mensajeSql.lines().findFirst().orElse("");
+        return primera.startsWith("ERROR: ") ? primera.substring("ERROR: ".length()) : primera;
+    }
+
+    public List<ViajeHistorialDTO> historial(Long idUsuario, Integer limite) {
+        if (idUsuario == null || idUsuario <= 0) {
+            throw new IllegalArgumentException("El identificador de usuario debe ser un entero positivo.");
+        }
+        int tope = limite != null ? limite : 50;
+        if (tope < 1 || tope > 200) {
+            throw new IllegalArgumentException("El límite debe estar entre 1 y 200.");
+        }
+        return repository.listarPorUsuario(idUsuario, tope);
     }
 }

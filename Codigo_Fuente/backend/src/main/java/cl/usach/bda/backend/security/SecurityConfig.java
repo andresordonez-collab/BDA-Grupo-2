@@ -36,6 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/logout", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/viajes/*/finalizar").hasRole("Usuario")
                         .requestMatchers(HttpMethod.GET, "/api/viajes/resumen-mensual").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.POST, "/api/viajes").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.GET, "/api/viajes/mis-viajes").hasRole("Usuario")
                         .requestMatchers(HttpMethod.GET, "/api/estaciones/**", "/api/tarifas/**",
                                 "/api/tipos-vehiculos/**").authenticated()
                         .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",
