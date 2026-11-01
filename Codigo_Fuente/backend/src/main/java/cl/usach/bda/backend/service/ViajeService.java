@@ -2,6 +2,7 @@ package cl.usach.bda.backend.service;
 
 import cl.usach.bda.backend.dto.ResumenMensualDTO;
 import cl.usach.bda.backend.dto.ViajeHistorialDTO;
+import cl.usach.bda.backend.entities.ViajeEntity;
 import cl.usach.bda.backend.exception.FinalizarViajeNegocioException;
 import cl.usach.bda.backend.exception.IniciarViajeNegocioException;
 import cl.usach.bda.backend.repository.ViajeRepository;
@@ -28,6 +29,10 @@ public class ViajeService {
             "No puede iniciar el viaje", "Nivel de batería insuficiente",
             "El usuario ya tiene un viaje en curso", "Error: El usuario ",
             "Error: El vehículo ", "Error: No hay una tarifa activa");
+
+    private static NoSuchElementException viajeNoEncontrado() {
+        return new NoSuchElementException("Viaje no encontrado.");
+    }
 
     public ViajeService(ViajeRepository repository) {
         this.repository = repository;
@@ -66,8 +71,35 @@ public class ViajeService {
         }
     }
 
-    private static NoSuchElementException viajeNoEncontrado() {
-        return new NoSuchElementException("Viaje no encontrado.");
+    @Transactional
+    public ViajeEntity guardarViaje(ViajeEntity viaje) {
+        return repository.save(viaje);
+    }
+
+    public List<ViajeEntity> listarViajes() {
+        return repository.findAll();
+    }
+
+    public ViajeEntity obtenerViajePorId(Long idViaje) {
+        return repository.findById(idViaje)
+                .orElseThrow(() -> new NoSuchElementException("Viaje con ID " + idViaje + " no encontrado."));
+    }
+
+    @Transactional
+    public ViajeEntity actualizarViaje(Long idViaje, ViajeEntity viaje) {
+        boolean actualizado = repository.update(idViaje, viaje);
+        if (!actualizado) {
+            throw new NoSuchElementException("Viaje con ID " + idViaje + " no encontrado para actualizar.");
+        }
+        return obtenerViajePorId(idViaje);
+    }
+
+    @Transactional
+    public void eliminarViaje(Long idViaje) {
+        boolean eliminado = repository.deleteById(idViaje);
+        if (!eliminado) {
+            throw new NoSuchElementException("Viaje con ID " + idViaje + " no encontrado para eliminar.");
+        }
     }
 
     // Sin anio/mes se usa el mes actual. Se valida antes de llegar a la BD: make_date falla con mes 13.

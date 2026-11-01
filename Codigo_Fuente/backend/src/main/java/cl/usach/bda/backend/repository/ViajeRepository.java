@@ -1,12 +1,15 @@
 package cl.usach.bda.backend.repository;
 
+import cl.usach.bda.backend.entities.ViajeEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import cl.usach.bda.backend.dto.ResumenMensualDTO;
 import cl.usach.bda.backend.dto.ViajeHistorialDTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +20,78 @@ public class ViajeRepository {
 
     public ViajeRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    // Mapeo de filas de la tabla viajes a objetos ViajeEntity.
+    private static final RowMapper<ViajeEntity> VIAJES_ROW_MAPPER = (rs, rowNum) ->
+            ViajeEntity.builder()
+                    .idViaje(rs.getLong("id_viaje"))
+                    .idUsuario(rs.getLong("id_usuario"))
+                    .idVehiculo(rs.getLong("id_vehiculo"))
+                    .idOrigen(rs.getLong("id_origen"))
+                    .idDestino(rs.getObject("id_destino", Long.class))
+                    .idTarifa(rs.getLong("id_tarifa"))
+                    .fechaInicio(rs.getObject("fecha_inicio", LocalDateTime.class))
+                    .fechaFin(rs.getObject("fecha_fin", LocalDateTime.class))
+                    .minutosViaje(rs.getObject("minutos_viaje", Integer.class))
+                    .costo(rs.getObject("costo", BigDecimal.class))
+                    .estadoViaje(rs.getString("estado_viaje"))
+                    .build();
+
+    public ViajeEntity save(ViajeEntity viaje) {
+        String sql = "INSERT INTO viajes (id_usuario, id_vehiculo, id_origen, id_destino, id_tarifa, fecha_inicio, fecha_fin, minutos_viaje, costo, estado_viaje)"
+                + " VALUES (?, ?, ?, ?, ?, COALESCE(?, LOCALTIMESTAMP), ?, ?, ?, ?) RETURNING id_viaje";
+        Long idGenerado = jdbcTemplate.queryForObject(sql, Long.class,
+                viaje.getIdUsuario(),
+                viaje.getIdVehiculo(),
+                viaje.getIdOrigen(),
+                viaje.getIdDestino(),
+                viaje.getIdTarifa(),
+                viaje.getFechaInicio(),
+                viaje.getFechaFin(),
+                viaje.getMinutosViaje(),
+                viaje.getCosto(),
+                viaje.getEstadoViaje()
+        );
+        viaje.setIdViaje(idGenerado);
+        return findById(idGenerado).orElseThrow();
+    }
+
+    public List<ViajeEntity> findAll() {
+        String sql = "SELECT * FROM viajes ORDER BY id_viaje ASC";
+        return jdbcTemplate.query(sql, VIAJES_ROW_MAPPER);
+    }
+
+    public Optional<ViajeEntity> findById(Long idViaje) {
+        String sql = "SELECT * FROM viajes WHERE id_viaje = ?";
+        return jdbcTemplate.query(sql, VIAJES_ROW_MAPPER, idViaje)
+                .stream()
+                .findFirst();
+    }
+
+    public boolean update(Long idViaje, ViajeEntity viaje) {
+        String sql = "UPDATE viajes SET id_usuario = ?, id_vehiculo = ?, id_origen = ?, id_destino = ?, id_tarifa = ?, fecha_inicio = COALESCE(?, fecha_inicio), fecha_fin = ?, minutos_viaje = ?, costo = ?, estado_viaje = ?"
+                + " WHERE id_viaje = ?";
+        int filasAfectadas = jdbcTemplate.update(sql,
+                viaje.getIdUsuario(),
+                viaje.getIdVehiculo(),
+                viaje.getIdOrigen(),
+                viaje.getIdDestino(),
+                viaje.getIdTarifa(),
+                viaje.getFechaInicio(),
+                viaje.getFechaFin(),
+                viaje.getMinutosViaje(),
+                viaje.getCosto(),
+                viaje.getEstadoViaje(),
+                idViaje
+        );
+        return filasAfectadas > 0;
+    }
+
+    public boolean deleteById(Long idViaje) {
+        String sql = "DELETE FROM viajes WHERE id_viaje = ?";
+        int filasAfectadas = jdbcTemplate.update(sql, idViaje);
+        return filasAfectadas > 0;
     }
 
     // Antes del viaje, igual que PA1. No comprobar capacidad ni actividad aquí.

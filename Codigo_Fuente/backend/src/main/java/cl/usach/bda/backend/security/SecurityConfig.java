@@ -1,8 +1,8 @@
 package cl.usach.bda.backend.security;
 
+import cl.usach.bda.backend.repository.UsuarioRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import cl.usach.bda.backend.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,10 +34,10 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(rutas -> rutas
                         .requestMatchers("/api/auth/login", "/api/auth/logout", "/error").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/viajes/*/finalizar").hasRole("Usuario")
-                        .requestMatchers(HttpMethod.GET, "/api/viajes/resumen-mensual").hasRole("Usuario")
-                        .requestMatchers(HttpMethod.POST, "/api/viajes").hasRole("Usuario")
-                        .requestMatchers(HttpMethod.GET, "/api/viajes/mis-viajes").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.POST, "/api/viajes",
+                                "/api/viajes/*/finalizar").hasRole("Usuario")
+                        .requestMatchers(HttpMethod.GET, "/api/viajes/resumen-mensual",
+                                "/api/viajes/mis-viajes").hasRole("Usuario")
                         .requestMatchers(HttpMethod.GET, "/api/estaciones/**", "/api/tarifas/**",
                                 "/api/tipos-vehiculos/**").authenticated()
                         .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",
@@ -46,7 +46,12 @@ public class SecurityConfig {
                                 "/api/usuarios/**",
                                 "/api/vehiculos/**",
                                 "/api/billeteras/**",
-                                "/api/movimientos-billeteras/**"
+                                "/api/movimientos-billeteras/**",
+                                "/api/viajes/**",
+                                "/api/ordenes-rebalanceo/**",
+                                "/api/detalles-rebalanceo/**",
+                                "/api/auditorias-vehiculos/**",
+                                "/api/refresh-tokens/**"
                         ).hasRole("Operador")
                         .anyRequest().authenticated()
                 );

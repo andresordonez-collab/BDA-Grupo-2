@@ -5,12 +5,14 @@ import cl.usach.bda.backend.dto.IniciarViajeRequestDTO;
 import cl.usach.bda.backend.dto.IniciarViajeResponseDTO;
 import cl.usach.bda.backend.dto.ResumenMensualDTO;
 import cl.usach.bda.backend.dto.ViajeHistorialDTO;
+import cl.usach.bda.backend.entities.ViajeEntity;
 import cl.usach.bda.backend.service.ViajeService;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,38 @@ public class ViajeController {
         this.service = service;
     }
 
-    @PostMapping("/{idViaje}/finalizar")
+    @GetMapping
+    public ResponseEntity<List<ViajeEntity>> listarViajes() {
+        return ResponseEntity.ok(service.listarViajes());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ViajeEntity> obtenerPorId(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(service.obtenerViajePorId(id));
+    }
+
+    @PostMapping("/administracion")
+    public ResponseEntity<ViajeEntity> crear(
+            @RequestBody ViajeEntity viaje) {
+
+        ViajeEntity creado = service.guardarViaje(viaje);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ViajeEntity> actualizar(
+            @PathVariable("id") Long id,
+            @RequestBody ViajeEntity viaje) {
+        return ResponseEntity.ok(service.actualizarViaje(id, viaje));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
+        service.eliminarViaje(id);
+        return ResponseEntity.noContent().build();
+    }
+
+        @PostMapping("/{idViaje}/finalizar")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void finalizar(@PathVariable("idViaje") Long idViaje,
                           @Valid @RequestBody FinalizarViajeRequestDTO solicitud,
