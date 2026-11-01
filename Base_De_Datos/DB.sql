@@ -21,17 +21,6 @@ CREATE TABLE usuarios(
 	FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
 );
 
-
--- Guarda los tokens de sesión asociados a los usuarios.
-CREATE TABLE refresh_tokens(
-	id_refresh_token BIGSERIAL PRIMARY KEY, 
-	id_usuario BIGINT NOT NULL, 
-	token_hash VARCHAR(255) UNIQUE NOT NULL, 
-	expira_en TIMESTAMP NOT NULL, 
-	revocado BOOLEAN NOT NULL DEFAULT FALSE,
-	FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
-);
-
 -- Representa la billetera de cada usuario y su saldo disponible.
 CREATE TABLE billeteras(
 	id_billetera BIGSERIAL PRIMARY KEY,
@@ -655,14 +644,6 @@ INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, 
     (9, 2, 'Catalina Reyes', 'catalina.reyes@example.com', '$2b$12$ft39IST4RYIUgHizYdVx0eo5IUrSs2UuwBBZBqkSIftMXFL3jJlPq', TRUE, '2026-10-05 12:00:00'),
     (10, 2, 'Joaquín Díaz', 'joaquin.diaz@example.com', '$2b$12$ZtAafdcmu6A9mXy1p3xCIe5TvxQQciroFDz5yCTcN6kH6CjakmROi', FALSE, '2026-10-05 12:30:00');
 
-INSERT INTO refresh_tokens (id_refresh_token, id_usuario, token_hash, expira_en, revocado) VALUES
-    (1, 1, 'DUMMY_TOKEN_HASH_001', '2026-10-26 08:00:00', FALSE),
-    (2, 3, 'DUMMY_TOKEN_HASH_003', '2026-10-25 09:00:00', FALSE),
-    (3, 4, 'DUMMY_TOKEN_HASH_004', '2026-10-25 10:00:00', FALSE),
-    (4, 5, 'DUMMY_TOKEN_HASH_005', '2026-10-26 09:00:00', FALSE),
-    (5, 9, 'DUMMY_TOKEN_HASH_009', '2026-10-18 12:00:00', FALSE),
-    (6, 10, 'DUMMY_TOKEN_HASH_010', '2026-10-25 12:30:00', TRUE);
-
 INSERT INTO billeteras (id_billetera, id_usuario, saldo) VALUES
     (1, 3, 17900.00),
     (2, 4, 14160.00),
@@ -777,7 +758,6 @@ VALUES
 
 SELECT setval(pg_get_serial_sequence('roles', 'id_rol'), MAX(id_rol)) FROM roles;
 SELECT setval(pg_get_serial_sequence('usuarios', 'id_usuario'), MAX(id_usuario)) FROM usuarios;
-SELECT setval(pg_get_serial_sequence('refresh_tokens', 'id_refresh_token'), MAX(id_refresh_token)) FROM refresh_tokens;
 SELECT setval(pg_get_serial_sequence('billeteras', 'id_billetera'), MAX(id_billetera)) FROM billeteras;
 SELECT setval(pg_get_serial_sequence('estaciones', 'id_estacion'), MAX(id_estacion)) FROM estaciones;
 SELECT setval(pg_get_serial_sequence('tipos_vehiculos', 'id_tipo_vehiculo'), MAX(id_tipo_vehiculo)) FROM tipos_vehiculos;

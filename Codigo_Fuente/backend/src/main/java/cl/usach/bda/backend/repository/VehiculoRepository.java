@@ -95,6 +95,37 @@ public class VehiculoRepository {
         return filasAfectadas > 0;
     }
 
+    // Actualizar únicamente el estado y preparar los datos de auditoría.
+    public boolean updateEstado(Long idVehiculo, String estadoVehiculo,
+                                Long idOperador, String motivo) {
+
+        jdbcTemplate.queryForObject(
+                "SELECT set_config('app.id_operador', ?, true)",
+                String.class,
+                String.valueOf(idOperador)
+        );
+
+        jdbcTemplate.queryForObject(
+                "SELECT set_config('app.motivo', ?, true)",
+                String.class,
+                motivo != null ? motivo : ""
+        );
+
+        String sql = """
+            UPDATE vehiculos
+            SET estado_vehiculo = ?
+            WHERE id_vehiculo = ?
+            """;
+
+        int filasAfectadas = jdbcTemplate.update(
+                sql,
+                estadoVehiculo,
+                idVehiculo
+        );
+
+        return filasAfectadas > 0;
+    }
+
     // Eliminar un registro por su ID.
     public boolean deleteById(Long idVehiculo) {
         String sql = "DELETE FROM vehiculos WHERE id_vehiculo = ?";

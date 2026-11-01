@@ -82,6 +82,77 @@ public class VehiculoService {
     }
 
     @Transactional
+    public VehiculoEntity cambiarEstado(Long idVehiculo, String estadoVehiculo,
+                                        String motivo) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof Long)) {
+            throw new AccessDeniedException(
+                    "Se requiere una sesión válida para modificar vehículos."
+            );
+        }
+
+        boolean esOperador = authentication.getAuthorities().stream()
+                .anyMatch(authority ->
+                        "ROLE_Operador".equals(authority.getAuthority())
+                );
+
+        if (!esOperador) {
+            throw new AccessDeniedException(
+                    "Solo un operador puede modificar vehículos."
+            );
+        }
+
+        if (idVehiculo == null || idVehiculo <= 0) {
+            throw new IllegalArgumentException(
+                    "El identificador del vehículo debe ser un entero positivo."
+            );
+        }
+
+        if (estadoVehiculo == null || !List.of(
+                "Disponible",
+                "En uso",
+                "En mantención",
+                "Dado de baja"
+        ).contains(estadoVehiculo)) {
+            throw new IllegalArgumentException(
+                    "El estado del vehículo no es válido."
+            );
+        }
+
+        boolean requiereMotivo = "En mantención".equals(estadoVehiculo)
+                || "Dado de baja".equals(estadoVehiculo);
+
+        if (requiereMotivo && (motivo == null || motivo.isBlank())) {
+            throw new IllegalArgumentException(
+                    "Debe indicar un motivo para mantención o baja."
+            );
+        }
+
+        Long idOperador = (Long) authentication.getPrincipal();
+
+        boolean actualizado = vehiculoRepository.updateEstado(
+                idVehiculo,
+                estadoVehiculo,
+                idOperador,
+                motivo != null ? motivo.trim() : ""
+        );
+
+        if (!actualizado) {
+            throw new NoSuchElementException(
+                    "Vehículo con ID " + idVehiculo
+                            + " no encontrado para actualizar."
+            );
+        }
+
+        return obtenerVehiculoPorId(idVehiculo);
+    }
+
+    @Transactional
     public void eliminarVehiculo(Long idVehiculo) {
         boolean eliminado = vehiculoRepository.deleteById(idVehiculo);
         if (!eliminado) {

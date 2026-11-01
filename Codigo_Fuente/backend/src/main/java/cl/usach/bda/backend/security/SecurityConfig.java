@@ -50,8 +50,7 @@ public class SecurityConfig {
                                 "/api/viajes/**",
                                 "/api/ordenes-rebalanceo/**",
                                 "/api/detalles-rebalanceo/**",
-                                "/api/auditorias-vehiculos/**",
-                                "/api/refresh-tokens/**"
+                                "/api/auditorias-vehiculos/**"
                         ).hasRole("Operador")
                         .anyRequest().authenticated()
                 );
