@@ -52,6 +52,7 @@ public class SecurityConfig {
                                 "/api/detalles-rebalanceo/**",
                                 "/api/auditorias-vehiculos/**"
                         ).hasRole("Operador")
+                        .requestMatchers("/api/reportes/**").hasRole("Operador")
                         .anyRequest().authenticated()
                 );
         return http.build();
