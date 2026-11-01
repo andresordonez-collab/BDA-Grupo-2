@@ -35,11 +35,9 @@ export const MENU_BY_ROLE = {
   Usuario: [
     { label: 'Estaciones', path: '/usuario', icon: PlaceIcon },
     { label: 'Mi viaje', path: '/usuario/mi-viaje', icon: DirectionsBikeIcon },
+    { label: 'Billetera', path: '/usuario/billetera', icon: AccountBalanceWalletIcon },
+    { label: 'Tarifas', path: '/usuario/tarifas', icon: PriceChangeIcon },
     { label: 'Historial', path: '/usuario/historial', icon: HistoryIcon },
-    {
-      label: 'Resumen mensual',
-      path: '/usuario/resumen-mensual',
-      icon: DashboardIcon,
-    },
+    { label: 'Resumen mensual', path: '/usuario/resumen-mensual', icon: DashboardIcon },
   ],
 };

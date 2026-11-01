@@ -20,6 +20,8 @@ import MovimientosBilleteraPage from './pages/operador/MovimientosBilleteraPage'
 import HistorialPage from './pages/usuario/HistorialPage';
 import ResumenMensualPage from './pages/usuario/ResumenMensualPage';
 import MiViajePage from './pages/usuario/MiViajePage';
+import TarifasUsuarioPage from './pages/usuario/TarifasPage';
+import BilleteraUsuarioPage from './pages/usuario/BilleteraPage';
 
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import RutaProtegida from './auth/RutaProtegida';
@@ -99,6 +101,8 @@ function ContenidoApp() {
             <Route path="historial" element={<HistorialPage />} />
             <Route path="resumen-mensual" element={<ResumenMensualPage />} />
             <Route path="mi-viaje" element={<MiViajePage />} />
+            <Route path="billetera" element={<BilleteraUsuarioPage />} />
+            <Route path="tarifas" element={<TarifasUsuarioPage />} />
           </Route>
         </Route>
 
