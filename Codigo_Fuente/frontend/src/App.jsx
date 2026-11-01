@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react'; 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -11,6 +12,7 @@ import EstacionesPage from './pages/operador/EstacionesPage';
 import RebalanceoPage from './pages/operador/RebalanceoPage';
 import AuditoriaPage from './pages/operador/AuditoriaPage';
 import DemandaPage from './pages/operador/DemandaPage';
+import authService from './services/authService';
 
 const theme = createTheme({
   palette: {
@@ -29,19 +31,65 @@ const theme = createTheme({
   },
 });
 
-// Usuario simulado solo para el modo mock. En modo real, el AuthContext
-// debe entregar este mismo objeto desde /api/auth/me.
-const usuarioMock =
-  import.meta.env.VITE_USE_MOCKS === 'true'
-    ? {
-        idUsuario: 1,
-        nombreUsuario: 'Camila Torres',
-        email: 'camila.operadora@example.com',
-        rol: 'Operador',
-      }
-    : undefined;
-
 function App() {
+  const [usuario, setUsuario] = useState(null);
+  const [verificandoSesion, setVerificandoSesion] = useState(true);
+  const [errorSesion, setErrorSesion] = useState('');
+  const cerrarSesion = async () => {
+    await authService.logout();
+    setUsuario(null);
+  };
+
+  useEffect(() => {
+  let activo = true;
+
+  async function recuperarSesion() {
+    try {
+      const perfil = await authService.me();
+
+      if (!perfil?.idUsuario || typeof perfil.rol !== 'string') {
+        throw new Error('Respuesta de sesión inválida');
+      }
+
+      if (activo) {
+        setUsuario(perfil);
+      }
+    } catch (err) {
+      if (!activo) return;
+
+      if (err.response?.status === 401) {
+        setUsuario(null);
+      } else {
+        setErrorSesion('No pudimos comprobar tu sesión. Intenta nuevamente.');
+      }
+    } finally {
+      if (activo) {
+        setVerificandoSesion(false);
+      }
+    }
+  }
+
+  recuperarSesion();
+
+  return () => {
+    activo = false;
+  };
+}, []);
+
+if (verificandoSesion) {
+  return <p role="status">Comprobando sesión…</p>;
+}
+
+if (errorSesion) {
+  return (
+    <div role="alert">
+      <p>{errorSesion}</p>
+      <button type="button" onClick={() => window.location.reload()}>
+        Reintentar
+      </button>
+    </div>
+  );
+}
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -49,17 +97,17 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Público */}
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Login onLogin={setUsuario} />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Usuario: se mantiene la pantalla actual mientras se migra */}
-          <Route path="/usuario" element={<PanelUsuario />} />
+          <Route path="/usuario" element={<PanelUsuario onLogout = {cerrarSesion} />} />
 
           {/* Operador */}
           <Route
             path="/operador"
             element={
-              <Layout role="Operador" usuario={usuarioMock} />
+              <Layout role="Operador" usuario={usuario} onLogout={cerrarSesion} />
             }
           >
             <Route index element={<Navigate to="/operador/flota" replace />} />
