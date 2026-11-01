@@ -1,6 +1,5 @@
-import { AppBar, Avatar, Box, Button, Toolbar, Typography } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-
+import { AppBar, Avatar, Box, Toolbar, Typography } from '@mui/material';
+import BotonSalir from '../common/BotonSalir';
 export default function AppHeader({ role, usuario, onLogout }) {
   const nombre = usuario?.nombreUsuario ?? 'Operador';
   const inicial = nombre.charAt(0).toUpperCase();
@@ -39,15 +38,10 @@ export default function AppHeader({ role, usuario, onLogout }) {
           </Box>
         </Box>
 
-        <Button
-          color="inherit"
-          startIcon={<LogoutIcon />}
-          onClick={() => onLogout?.()}
-          disabled={!onLogout}
-        >
-          Salir
-        </Button>
+        <BotonSalir onLogout={onLogout} />
       </Toolbar>
     </AppBar>
   );
 }
+
+
