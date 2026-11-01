@@ -1,5 +1,5 @@
 import http from '../http-common';
 
-const getAll = () => http.get('/api/vehiculos/auditorias');
+const getAll = () => http.get('/api/auditorias-vehiculos');
 
 export default { getAll };
