@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.AuditoriaVehiculoDetalleDTO;
 import cl.usach.bda.backend.entities.AuditoriaVehiculoEntity;
 import cl.usach.bda.backend.service.AuditoriaVehiculoService;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,8 @@ public class AuditoriaVehiculoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AuditoriaVehiculoEntity>> listarAuditoriasVehiculos() {
-        return ResponseEntity.ok(service.listarAuditoriasVehiculos());
+    public ResponseEntity<List<AuditoriaVehiculoDetalleDTO>> listarAuditoriasVehiculos() {
+        return ResponseEntity.ok(service.listarAuditoriasConDetalle());
     }
 
     @GetMapping("/{id}")

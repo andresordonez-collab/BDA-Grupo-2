@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.controller;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import cl.usach.bda.backend.service.EstacionService;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,12 @@ public class EstacionController {
     public ResponseEntity<EstacionEntity> obtenerPorId(@PathVariable("id") Long id) {
         return ResponseEntity.ok(estacionService.obtenerEstacionPorId(id));
     }
+
+    // Vehículos que se pueden tomar en una estación (lectura para cualquier usuario autenticado).
+    @GetMapping("/{id}/vehiculos-disponibles")
+    public ResponseEntity<List<VehiculoDisponibleDTO>> listarVehiculosDisponibles(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(estacionService.listarVehiculosDisponibles(id));
+    }    
 
     // Endpoint para crear una nueva estación.
     @PostMapping
