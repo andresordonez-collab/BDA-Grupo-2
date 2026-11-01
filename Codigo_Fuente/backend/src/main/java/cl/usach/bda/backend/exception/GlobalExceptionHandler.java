@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -53,13 +54,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> manejarTipoParametro(MethodArgumentTypeMismatchException ex,
-                                                                   HttpServletRequest request) {
-        if (esFinalizacionViaje(request)) {
-            return construirRespuesta(HttpStatus.BAD_REQUEST, "SOLICITUD_INVALIDA",
-                    "Los identificadores deben ser enteros positivos dentro de su rango.");
-        }
-        return manejarErrorInterno(ex, request);
+    public ResponseEntity<Map<String, Object>> manejarTipoParametro(
+            MethodArgumentTypeMismatchException ex) {
+
+        return construirRespuesta(
+                HttpStatus.BAD_REQUEST,
+                "SOLICITUD_INVALIDA",
+                "El parámetro '" + ex.getName() + "' tiene un formato inválido."
+        );
     }
 
     // 3. Violación de restricciones SQL: UNIQUE, FOREIGN KEY, CHECK, NOT NULL (409 Conflict / 400 Bad Request)
@@ -96,6 +98,17 @@ public class GlobalExceptionHandler {
                 ? "No fue posible completar el rebalanceo."
                 : "No fue posible completar la solicitud.";
         return construirRespuesta(HttpStatus.INTERNAL_SERVER_ERROR, "ERROR_INTERNO", mensaje);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> manejarAccesoDenegado(
+            AccessDeniedException ex) {
+
+        return construirRespuesta(
+                HttpStatus.FORBIDDEN,
+                "ACCESO_DENEGADO",
+                ex.getMessage()
+        );
     }
 
     private boolean esFinalizacionViaje(HttpServletRequest request) {

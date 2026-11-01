@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -40,18 +41,39 @@ public class VehiculoService {
     public VehiculoEntity actualizarVehiculo(Long idVehiculo, VehiculoEntity vehiculo,
                                              Long idOperador, String motivo) {
         VehiculoEntity existente = obtenerVehiculoPorId(idVehiculo);
-        if (idOperador == null) {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication != null && authentication.getPrincipal() instanceof Long) {
-                idOperador = (Long) authentication.getPrincipal();
-            }
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof Long)) {
+            throw new AccessDeniedException(
+                    "Se requiere una sesión válida para modificar vehículos."
+            );
         }
-        boolean requiereAuditoria = ("En mantención".equals(vehiculo.getEstadoVehiculo())
-                || "Dado de baja".equals(vehiculo.getEstadoVehiculo()))
-                && !vehiculo.getEstadoVehiculo().equals(existente.getEstadoVehiculo());
-        if (requiereAuditoria && idOperador == null) {
-            throw new IllegalArgumentException("Debe indicar idOperador para auditar el cambio de estado.");
+
+        Long idAutenticado = (Long) authentication.getPrincipal();
+
+        boolean esOperador = authentication.getAuthorities().stream()
+                .anyMatch(authority ->
+                        "ROLE_Operador".equals(authority.getAuthority())
+                );
+
+        if (!esOperador) {
+            throw new AccessDeniedException(
+                    "Solo un operador puede modificar vehículos."
+            );
         }
+
+        if (idOperador != null && !idOperador.equals(idAutenticado)) {
+            throw new AccessDeniedException(
+                    "No puede atribuir el cambio a otro usuario."
+            );
+        }
+
+    // El ID utilizado por el repositorio siempre procede de la sesión.
+        idOperador = idAutenticado;
+
         boolean actualizado = vehiculoRepository.update(idVehiculo, vehiculo, idOperador, motivo);
         if (!actualizado) {
             throw new NoSuchElementException("Vehículo con ID " + idVehiculo + " no encontrado para actualizar.");

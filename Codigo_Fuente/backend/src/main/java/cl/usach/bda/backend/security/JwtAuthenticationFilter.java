@@ -13,6 +13,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+import cl.usach.bda.backend.repository.UsuarioRepository;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,9 +21,13 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UsuarioRepository usuarioRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            UsuarioRepository usuarioRepository) {
         this.jwtService = jwtService;
+        this.usuarioRepository = usuarioRepository;
     }
 
     @Override
@@ -34,13 +39,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 try {
                     Claims claims = jwtService.validarToken(token);
                     Long idUsuario = Long.valueOf(claims.getSubject());
-                    String rol = claims.get("rol", String.class);
-                    if (idUsuario <= 0 || rol == null || rol.isBlank()) {
-                        throw new IllegalArgumentException("Identidad JWT inválida");
+
+                    if (idUsuario <= 0) {
+                        throw new IllegalArgumentException("Identidad JWT inválida.");
                     }
+
+                    var usuario = usuarioRepository.buscarPorId(idUsuario)
+                            .filter(u -> Boolean.TRUE.equals(u.usuarioActivo()))
+                            .orElseThrow(() -> new IllegalArgumentException(
+                                    "Usuario inexistente o inactivo."
+                            ));
+
+                    String rol = usuario.rol();
+
+                    if (rol == null || rol.isBlank()) {
+                        throw new IllegalArgumentException("Usuario sin rol válido.");
+                    }
+
                     var authentication = new UsernamePasswordAuthenticationToken(
-                            idUsuario, null, List.of(new SimpleGrantedAuthority("ROLE_" + rol)));
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            usuario.idUsuario(),
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_" + rol))
+                    );
+
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+
                     var context = SecurityContextHolder.createEmptyContext();
                     context.setAuthentication(authentication);
                     SecurityContextHolder.setContext(context);

@@ -11,7 +11,7 @@ export default defineConfig({
       // Así el navegador trabaja con un solo origen y la cookie HttpOnly
       // se comporta como same-origin durante el desarrollo.
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://backend:8080',
         changeOrigin: true,
       },
     },

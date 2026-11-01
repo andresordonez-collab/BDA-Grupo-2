@@ -2,6 +2,7 @@ package cl.usach.bda.backend.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import cl.usach.bda.backend.repository.UsuarioRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,9 +22,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtService jwtService) throws Exception {
+    public SecurityFilterChain filterChain(
+            HttpSecurity http,
+            JwtService jwtService,
+            UsuarioRepository usuarioRepository) throws Exception {
         http
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, usuarioRepository),
+                        UsernamePasswordAuthenticationFilter.class)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
@@ -34,6 +39,12 @@ public class SecurityConfig {
                                 "/api/tipos-vehiculos/**").authenticated()
                         .requestMatchers("/api/estaciones/**", "/api/tarifas/**", "/api/tipos-vehiculos/**",
                                 "/api/roles/**", "/api/rebalanceos/**").hasRole("Operador")
+                        .requestMatchers(
+                                "/api/usuarios/**",
+                                "/api/vehiculos/**",
+                                "/api/billeteras/**",
+                                "/api/movimientos-billeteras/**"
+                        ).hasRole("Operador")
                         .anyRequest().authenticated()
                 );
         return http.build();
