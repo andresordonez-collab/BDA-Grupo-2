@@ -3,6 +3,7 @@
 
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.CambioEstadoVehiculoDTO;
 import cl.usach.bda.backend.entities.VehiculoEntity;
 import cl.usach.bda.backend.service.VehiculoService;
 import org.springframework.http.HttpStatus;
@@ -44,6 +45,20 @@ public class VehiculoController {
             @RequestParam(value = "idOperador", required = false) Long idOperador,
             @RequestParam(value = "motivo", required = false) String motivo) {
         return ResponseEntity.ok(vehiculoService.actualizarVehiculo(id, vehiculo, idOperador, motivo));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<VehiculoEntity> cambiarEstado(
+            @PathVariable("id") Long id,
+            @RequestBody CambioEstadoVehiculoDTO solicitud) {
+
+        return ResponseEntity.ok(
+                vehiculoService.cambiarEstado(
+                        id,
+                        solicitud.estadoVehiculo(),
+                        solicitud.motivo()
+                )
+        );
     }
 
     @DeleteMapping("/{id}")
