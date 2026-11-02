@@ -7,11 +7,15 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.annotation.JsonDeserialize;
 
-/** Solo valida presencia; las reglas de negocio pertenecen a rebalancear_flota. */
+/**
+ * Solo valida presencia; las reglas de negocio pertenecen a rebalancear_flota.
+ * idTipoVehiculo es opcional: sin él se trasladan vehículos de cualquier tipo.
+ */
 public record RebalanceoRequestDTO(
         @NotNull @JsonDeserialize(using = EnteroLargo.class) Long idEstacionOrigen,
         @NotNull @JsonDeserialize(using = EnteroLargo.class) Long idEstacionDestino,
-        @NotNull @JsonDeserialize(using = Entero.class) Integer cantidadVehiculos
+        @NotNull @JsonDeserialize(using = Entero.class) Integer cantidadVehiculos,
+        @JsonDeserialize(using = EnteroLargo.class) Long idTipoVehiculo
 ) {
     // Rechazar coerciones de texto/decimales solo para este contrato, sin cambiar
     // el ObjectMapper ni las solicitudes de otros controladores.

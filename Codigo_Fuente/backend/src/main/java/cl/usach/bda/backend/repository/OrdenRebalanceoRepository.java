@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.repository;
 
+import cl.usach.bda.backend.dto.OrdenRebalanceoDetalleDTO;
 import cl.usach.bda.backend.entities.OrdenRebalanceoEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -47,6 +48,43 @@ public class OrdenRebalanceoRepository {
     public List<OrdenRebalanceoEntity> findAll() {
         String sql = "SELECT * FROM ordenes_rebalanceo ORDER BY id_orden ASC";
         return jdbcTemplate.query(sql, ORDENES_REBALANCEO_ROW_MAPPER);
+    }
+
+    // Órdenes con el desglose por tipo de los vehículos trasladados (según detalles_rebalanceo).
+    public List<OrdenRebalanceoDetalleDTO> findAllConDetalle() {
+        String sql = """
+                SELECT
+                    o.id_orden,
+                    o.id_estacion_origen,
+                    o.id_estacion_destino,
+                    o.id_operador,
+                    o.cantidad_vehiculos,
+                    o.fecha_orden,
+                    o.estado_orden,
+                    COUNT(d.id_vehiculo) FILTER (
+                        WHERE tv.nombre_tipo_vehiculo = 'Bicicleta'
+                    ) AS cantidad_bicicletas,
+                    COUNT(d.id_vehiculo) FILTER (
+                        WHERE tv.nombre_tipo_vehiculo = 'Scooter'
+                    ) AS cantidad_scooters
+                FROM ordenes_rebalanceo o
+                LEFT JOIN detalles_rebalanceo d ON d.id_orden = o.id_orden
+                LEFT JOIN vehiculos v ON v.id_vehiculo = d.id_vehiculo
+                LEFT JOIN tipos_vehiculos tv ON tv.id_tipo_vehiculo = v.id_tipo_vehiculo
+                GROUP BY o.id_orden
+                ORDER BY o.id_orden ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new OrdenRebalanceoDetalleDTO(
+                rs.getLong("id_orden"),
+                rs.getLong("id_estacion_origen"),
+                rs.getLong("id_estacion_destino"),
+                rs.getLong("id_operador"),
+                rs.getObject("cantidad_vehiculos", Integer.class),
+                rs.getObject("fecha_orden", LocalDateTime.class),
+                rs.getString("estado_orden"),
+                rs.getLong("cantidad_bicicletas"),
+                rs.getLong("cantidad_scooters")
+        ));
     }
 
     public Optional<OrdenRebalanceoEntity> findById(Long idOrden) {

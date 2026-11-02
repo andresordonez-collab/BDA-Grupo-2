@@ -56,13 +56,26 @@ export default function VehiculoFormDialog({
     setError('');
   }, [abierto, vehiculo]);
 
+  const nombreTipo = (idTipo) =>
+    tipos.find((tipo) => String(tipo.idTipoVehiculo) === String(idTipo))
+      ?.nombreTipoVehiculo ?? '';
+
+  const esBicicleta = nombreTipo(form.idTipoVehiculo) === 'Bicicleta';
+  const esScooter = nombreTipo(form.idTipoVehiculo) === 'Scooter';
+
   const cambiar = (event) => {
     const { name, value } = event.target;
 
-    setForm((actual) => ({
-      ...actual,
-      [name]: value,
-    }));
+    setForm((actual) => {
+      const siguiente = { ...actual, [name]: value };
+
+      // Una bicicleta no tiene batería: al elegir ese tipo se limpia el campo.
+      if (name === 'idTipoVehiculo' && nombreTipo(value) === 'Bicicleta') {
+        siguiente.nivelBateria = '';
+      }
+
+      return siguiente;
+    });
   };
 
   const guardar = async () => {
@@ -73,6 +86,11 @@ export default function VehiculoFormDialog({
 
     if (!form.idTipoVehiculo) {
       setError('Selecciona un tipo de vehículo.');
+      return;
+    }
+
+    if (esScooter && form.nivelBateria === '') {
+      setError('Los scooters requieren un nivel de batería entre 0 y 100.');
       return;
     }
 
@@ -96,7 +114,7 @@ export default function VehiculoFormDialog({
           : null,
         codigoVehiculo: form.codigoVehiculo.trim(),
         nivelBateria:
-          form.nivelBateria === ''
+          esBicicleta || form.nivelBateria === ''
             ? null
             : Number(form.nivelBateria),
         estadoVehiculo:
@@ -192,7 +210,13 @@ export default function VehiculoFormDialog({
           name="nivelBateria"
           value={form.nivelBateria}
           onChange={cambiar}
-          helperText="Opcional para bicicletas. Para scooters debe estar entre 0 y 100."
+          disabled={esBicicleta}
+          required={esScooter}
+          helperText={
+            esBicicleta
+              ? 'Las bicicletas no tienen batería.'
+              : 'Obligatoria para scooters, entre 0 y 100.'
+          }
           slotProps={{
             htmlInput: {
               min: 0,

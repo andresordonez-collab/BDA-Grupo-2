@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.repository;
 
 
+import cl.usach.bda.backend.dto.VehiculoDetalleDTO;
 import cl.usach.bda.backend.entities.VehiculoEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -60,6 +61,38 @@ public class VehiculoRepository {
     public List<VehiculoEntity> findAll() {
         String sql = "SELECT * FROM vehiculos ORDER BY id_vehiculo ASC";
         return jdbcTemplate.query(sql, VEHICULO_ROW_MAPPER);
+    }
+
+    // Obtener todos los vehículos con el nombre de su tipo y de su estación.
+    // LEFT JOIN con estaciones: un vehículo en uso no está anclado a ninguna.
+    public List<VehiculoDetalleDTO> findAllConDetalle() {
+        String sql = """
+                SELECT
+                    v.id_vehiculo,
+                    v.id_tipo_vehiculo,
+                    tv.nombre_tipo_vehiculo,
+                    v.id_estacion,
+                    e.nombre_estacion,
+                    v.codigo_vehiculo,
+                    v.nivel_bateria,
+                    v.fecha_alta,
+                    v.estado_vehiculo
+                FROM vehiculos v
+                JOIN tipos_vehiculos tv ON tv.id_tipo_vehiculo = v.id_tipo_vehiculo
+                LEFT JOIN estaciones e ON e.id_estacion = v.id_estacion
+                ORDER BY v.id_vehiculo ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new VehiculoDetalleDTO(
+                rs.getLong("id_vehiculo"),
+                rs.getLong("id_tipo_vehiculo"),
+                rs.getString("nombre_tipo_vehiculo"),
+                rs.getObject("id_estacion", Long.class),
+                rs.getString("nombre_estacion"),
+                rs.getString("codigo_vehiculo"),
+                rs.getObject("nivel_bateria", Integer.class),
+                rs.getObject("fecha_alta", LocalDateTime.class),
+                rs.getString("estado_vehiculo")
+        ));
     }
 
     // Obtener un registro por su ID.

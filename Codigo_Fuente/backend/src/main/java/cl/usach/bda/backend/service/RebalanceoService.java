@@ -17,7 +17,7 @@ public class RebalanceoService {
             "La cantidad de vehículos debe ser mayor que cero.",
             "Debe indicar las estaciones de origen y destino.",
             "Las estaciones de origen y destino deben ser diferentes.",
-            "La estación de origen ", "La estación de destino ", "El usuario ");
+            "La estación de origen ", "La estación de destino ", "El usuario ", "El tipo de vehículo ");
 
     private final RebalanceoRepository repository;
 

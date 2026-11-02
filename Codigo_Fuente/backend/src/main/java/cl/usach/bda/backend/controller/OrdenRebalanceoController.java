@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.OrdenRebalanceoDetalleDTO;
 import cl.usach.bda.backend.entities.OrdenRebalanceoEntity;
 import cl.usach.bda.backend.service.OrdenRebalanceoService;
 import org.springframework.http.HttpStatus;
@@ -19,8 +20,8 @@ public class OrdenRebalanceoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OrdenRebalanceoEntity>> listarOrdenesRebalanceo() {
-        return ResponseEntity.ok(service.listarOrdenesRebalanceo());
+    public ResponseEntity<List<OrdenRebalanceoDetalleDTO>> listarOrdenesRebalanceo() {
+        return ResponseEntity.ok(service.listarOrdenesRebalanceoConDetalle());
     }
 
     @GetMapping("/{id}")

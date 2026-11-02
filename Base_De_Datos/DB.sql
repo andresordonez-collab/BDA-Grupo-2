@@ -384,7 +384,8 @@ CREATE OR REPLACE PROCEDURE rebalancear_flota(
     p_id_estacion_origen BIGINT,
     p_id_estacion_destino BIGINT,
     p_id_operador BIGINT,
-    p_cantidad_vehiculos INT
+    p_cantidad_vehiculos INT,
+    p_id_tipo_vehiculo BIGINT DEFAULT NULL
 )
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -446,20 +447,34 @@ BEGIN
         RAISE EXCEPTION 'El usuario % no existe, está inactivo o no tiene el rol Operador.', p_id_operador;
     END IF;
 
-    -- Seleccionar y bloquear hasta N disponibles, siempre por ID ascendente.
+    -- Tipo de vehículo opcional: si viene, debe existir; si es NULL se trasladan vehículos de cualquier tipo.
+    IF p_id_tipo_vehiculo IS NOT NULL THEN
+        PERFORM 1
+        FROM tipos_vehiculos
+        WHERE id_tipo_vehiculo = p_id_tipo_vehiculo;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'El tipo de vehículo % no existe.', p_id_tipo_vehiculo;
+        END IF;
+    END IF;
+
+    -- Seleccionar y bloquear hasta N disponibles (del tipo indicado, si se indicó), siempre por ID ascendente.
     SELECT ARRAY(
         SELECT id_vehiculo
         FROM vehiculos
         WHERE id_estacion = p_id_estacion_origen
           AND estado_vehiculo = 'Disponible'
+          AND (p_id_tipo_vehiculo IS NULL OR id_tipo_vehiculo = p_id_tipo_vehiculo)
         ORDER BY id_vehiculo
         LIMIT p_cantidad_vehiculos
         FOR UPDATE
     ) INTO var_vehiculos;
 
     IF cardinality(var_vehiculos) < p_cantidad_vehiculos THEN
-        RAISE EXCEPTION 'La estación de origen % tiene solo % vehículos disponibles; se solicitaron %.',
-            p_id_estacion_origen, cardinality(var_vehiculos), p_cantidad_vehiculos;
+        RAISE EXCEPTION 'La estación de origen % tiene solo % vehículos disponibles%; se solicitaron %.',
+            p_id_estacion_origen, cardinality(var_vehiculos),
+            CASE WHEN p_id_tipo_vehiculo IS NULL THEN '' ELSE ' del tipo seleccionado' END,
+            p_cantidad_vehiculos;
     END IF;
 
     -- Todo vehículo asociado al destino ocupa espacio, cualquiera sea su estado.

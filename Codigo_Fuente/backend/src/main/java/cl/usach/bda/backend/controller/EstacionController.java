@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.controller;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.EstacionDetalleDTO;
 import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import cl.usach.bda.backend.service.EstacionService;
@@ -26,10 +27,10 @@ public class EstacionController {
         return estacionService.obtenerDisponibilidad();
     }
 
-    // Endpoint para listar todas las estaciones.
+    // Endpoint para listar todas las estaciones, con su ocupación y vehículos disponibles por tipo.
     @GetMapping
-    public ResponseEntity<List<EstacionEntity>> listarEstaciones() {
-        return ResponseEntity.ok(estacionService.listarEstaciones());
+    public ResponseEntity<List<EstacionDetalleDTO>> listarEstaciones() {
+        return ResponseEntity.ok(estacionService.listarEstacionesConDetalle());
     }
 
     // Endpoint para obtener una estación por su ID.

@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.service;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.EstacionDetalleDTO;
 import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import cl.usach.bda.backend.repository.EstacionRepository;
@@ -28,6 +29,11 @@ public class EstacionService {
     // Listar todas las estaciones.
     public List<EstacionEntity> listarEstaciones() {
         return estacionRepository.findAll();
+    }
+
+    // Listar todas las estaciones con su ocupación y disponibilidad por tipo.
+    public List<EstacionDetalleDTO> listarEstacionesConDetalle() {
+        return estacionRepository.findAllConDetalle();
     }
 
     // Obtener una estación por su ID.

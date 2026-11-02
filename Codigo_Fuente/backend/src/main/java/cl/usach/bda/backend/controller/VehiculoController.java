@@ -4,6 +4,7 @@
 package cl.usach.bda.backend.controller;
 
 import cl.usach.bda.backend.dto.CambioEstadoVehiculoDTO;
+import cl.usach.bda.backend.dto.VehiculoDetalleDTO;
 import cl.usach.bda.backend.entities.VehiculoEntity;
 import cl.usach.bda.backend.service.VehiculoService;
 import org.springframework.http.HttpStatus;
@@ -23,8 +24,8 @@ public class VehiculoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VehiculoEntity>> listarVehiculos() {
-        return ResponseEntity.ok(vehiculoService.listarVehiculos());
+    public ResponseEntity<List<VehiculoDetalleDTO>> listarVehiculos() {
+        return ResponseEntity.ok(vehiculoService.listarVehiculosConDetalle());
     }
 
     @GetMapping("/{id}")

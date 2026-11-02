@@ -1,6 +1,7 @@
 package cl.usach.bda.backend.repository;
 
 import cl.usach.bda.backend.dto.DisponibilidadEstacionDTO;
+import cl.usach.bda.backend.dto.EstacionDetalleDTO;
 import cl.usach.bda.backend.dto.VehiculoDisponibleDTO;
 import cl.usach.bda.backend.entities.EstacionEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -69,6 +70,55 @@ public class EstacionRepository {
     public List<EstacionEntity> findAll(){
         String sql = "SELECT * FROM estaciones ORDER BY id_estacion ASC";
         return jdbcTemplate.query(sql, ESTACION_ROW_MAPPER);
+    };
+
+    // Obtener todas las estaciones con su ocupación y sus vehículos disponibles por tipo.
+    // Ocupación: todo vehículo anclado en la estación, sea cual sea su estado (misma regla que
+    // finalizar_viaje y rebalancear_flota). Las estaciones sin vehículos aparecen con ceros.
+    public List<EstacionDetalleDTO> findAllConDetalle(){
+        String sql = """
+                SELECT
+                    e.id_estacion,
+                    e.nombre_estacion,
+                    e.direccion,
+                    e.latitud,
+                    e.longitud,
+                    e.capacidad,
+                    e.estacion_activa,
+                    COUNT(v.id_vehiculo) AS ocupacion,
+                    COUNT(v.id_vehiculo) FILTER (
+                        WHERE v.estado_vehiculo = 'Disponible'
+                          AND tv.nombre_tipo_vehiculo = 'Bicicleta'
+                    ) AS cantidad_bicicletas,
+                    COUNT(v.id_vehiculo) FILTER (
+                        WHERE v.estado_vehiculo = 'Disponible'
+                          AND tv.nombre_tipo_vehiculo = 'Scooter'
+                    ) AS cantidad_scooters,
+                    ROUND(
+                        AVG(v.nivel_bateria) FILTER (
+                            WHERE v.estado_vehiculo = 'Disponible'
+                              AND tv.nombre_tipo_vehiculo = 'Scooter'
+                        ), 2
+                    ) AS bateria_promedio
+                FROM estaciones e
+                LEFT JOIN vehiculos v ON v.id_estacion = e.id_estacion
+                LEFT JOIN tipos_vehiculos tv ON tv.id_tipo_vehiculo = v.id_tipo_vehiculo
+                GROUP BY e.id_estacion
+                ORDER BY e.id_estacion
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new EstacionDetalleDTO(
+                rs.getLong("id_estacion"),
+                rs.getString("nombre_estacion"),
+                rs.getString("direccion"),
+                rs.getBigDecimal("latitud"),
+                rs.getBigDecimal("longitud"),
+                rs.getObject("capacidad", Integer.class),
+                rs.getObject("estacion_activa", Boolean.class),
+                rs.getLong("ocupacion"),
+                rs.getLong("cantidad_bicicletas"),
+                rs.getLong("cantidad_scooters"),
+                rs.getBigDecimal("bateria_promedio")
+        ));
     };
 
     // Obtener una estación por su ID.

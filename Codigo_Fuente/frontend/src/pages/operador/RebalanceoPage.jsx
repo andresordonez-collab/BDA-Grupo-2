@@ -23,6 +23,7 @@ import estacionService from '../../services/estacionService';
 import rebalanceoService from '../../services/rebalanceoService';
 import ordenRebalanceoService from '../../services/ordenRebalanceoService';
 import usuarioService from '../../services/usuarioService';
+import tipoVehiculoService from '../../services/tipoVehiculoService';
 import { formatearFechaHora } from '../../utils/formato';
 import { getErrorMessage } from '../../http-common';
 
@@ -59,6 +60,11 @@ function normalizarEstacion(estacion, disponibilidad) {
     null;
   const activa =
     estacion.estacionActiva ?? estacion.estacion_activa ?? null;
+  // GET /api/estaciones ya trae los disponibles por tipo; /disponibilidad queda como respaldo.
+  const bicicletas =
+    estacion.cantidadBicicletas ?? disponibilidad?.cantidadBicicletas ?? null;
+  const scooters =
+    estacion.cantidadScooters ?? disponibilidad?.cantidadScooters ?? null;
 
   return {
     id,
@@ -72,13 +78,39 @@ function normalizarEstacion(estacion, disponibilidad) {
       activa === null
         ? null
         : activa === true || activa === 'true',
-    disponibles: disponibilidad
-      ? disponibilidad.cantidadBicicletas +
-        disponibilidad.cantidadScooters
-      : null,
-    bicicletas: disponibilidad?.cantidadBicicletas ?? null,
-    scooters: disponibilidad?.cantidadScooters ?? null,
+    disponibles:
+      bicicletas !== null && scooters !== null ? bicicletas + scooters : null,
+    bicicletas,
+    scooters,
   };
+}
+
+// Disponibles de una estación para el tipo elegido (sin tipo: todos los tipos).
+function disponiblesPorTipo(estacion, tipo) {
+  if (!tipo) return estacion.disponibles;
+  if (tipo.nombreTipoVehiculo === 'Bicicleta') return estacion.bicicletas;
+  if (tipo.nombreTipoVehiculo === 'Scooter') return estacion.scooters;
+  return null;
+}
+
+function nombreVehiculos(tipo) {
+  return tipo ? `${tipo.nombreTipoVehiculo.toLowerCase()}s` : 'vehículos';
+}
+
+// Desglose de una orden: "2 bicicletas · 1 scooter" (o "—" si no tiene detalle registrado).
+function tiposTrasladados(orden) {
+  const partes = [];
+  const bicicletas = Number(orden.cantidadBicicletas ?? 0);
+  const scooters = Number(orden.cantidadScooters ?? 0);
+
+  if (bicicletas > 0) {
+    partes.push(`${bicicletas} ${bicicletas === 1 ? 'bicicleta' : 'bicicletas'}`);
+  }
+  if (scooters > 0) {
+    partes.push(`${scooters} ${scooters === 1 ? 'scooter' : 'scooters'}`);
+  }
+
+  return partes.length > 0 ? partes.join(' · ') : '—';
 }
 
 function desdeDisponibilidad(item) {
@@ -108,6 +140,8 @@ export default function RebalanceoPage() {
   const [origenId, setOrigenId] = useState('');
   const [destinoId, setDestinoId] = useState('');
   const [cantidad, setCantidad] = useState('1');
+  const [tipos, setTipos] = useState([]);
+  const [tipoId, setTipoId] = useState('');
   const [enviando, setEnviando] = useState(false);
 
   const [ordenes, setOrdenes] = useState([]);
@@ -215,6 +249,27 @@ export default function RebalanceoPage() {
     };
   }, [cargarOrdenes]);
 
+  useEffect(() => {
+    let activo = true;
+
+    tipoVehiculoService
+      .getAll()
+      .then(({ data }) => {
+        if (activo) {
+          setTipos(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        if (activo) {
+          setTipos([]);
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
   const nombreEstacion = (id) =>
     estaciones.find((estacion) => estacion.id === String(id))
       ?.nombre ?? `#${id}`;
@@ -233,6 +288,9 @@ export default function RebalanceoPage() {
     () => estaciones.find((estacion) => estacion.id === destinoId) ?? null,
     [estaciones, destinoId]
   );
+
+  const tipoElegido =
+    tipos.find((tipo) => String(tipo.idTipoVehiculo) === tipoId) ?? null;
 
   const cupoDestino =
     destino &&
@@ -260,11 +318,10 @@ export default function RebalanceoPage() {
       return 'La cantidad de vehículos debe ser un entero mayor que cero.';
     }
 
-    if (
-      origen.disponibles !== null &&
-      numero > origen.disponibles
-    ) {
-      return `La estación de origen solo tiene ${origen.disponibles} vehículos disponibles.`;
+    const disponiblesOrigen = disponiblesPorTipo(origen, tipoElegido);
+
+    if (disponiblesOrigen !== null && numero > disponiblesOrigen) {
+      return `La estación de origen solo tiene ${disponiblesOrigen} ${nombreVehiculos(tipoElegido)} disponibles.`;
     }
 
     if (destino.activa === false) {
@@ -296,10 +353,12 @@ export default function RebalanceoPage() {
         idEstacionDestino: Number(destino.id),
         idOperador: Number(idOperador),
         cantidadVehiculos: Number(cantidad),
+        // Sin tipo (null) se trasladan vehículos de cualquier tipo.
+        idTipoVehiculo: tipoElegido ? Number(tipoElegido.idTipoVehiculo) : null,
       });
 
       setExito(
-        `Se trasladaron ${cantidad} vehículos de ${origen.nombre} a ${destino.nombre}.`
+        `Se trasladaron ${cantidad} ${nombreVehiculos(tipoElegido)} de ${origen.nombre} a ${destino.nombre}.`
       );
       setCantidad('1');
       await cargar();
@@ -411,7 +470,7 @@ export default function RebalanceoPage() {
                   <MenuItem key={estacion.id} value={estacion.id}>
                     {estacion.nombre}
                     {estacion.disponibles !== null
-                      ? ` · ${estacion.disponibles} disponibles`
+                      ? ` · ${estacion.disponibles} disponibles (${estacion.bicicletas} bicis, ${estacion.scooters} scooters)`
                       : ''}
                   </MenuItem>
                 ))}
@@ -438,9 +497,32 @@ export default function RebalanceoPage() {
               </TextField>
 
               <TextField
+                select
+                fullWidth
+                label="Tipo de vehículo"
+                value={tipoId}
+                onChange={(event) => setTipoId(event.target.value)}
+                helperText="Elige qué tipo trasladar. Con 'Cualquiera' se mueven los primeros disponibles."
+              >
+                <MenuItem value="">Cualquiera</MenuItem>
+                {tipos.map((tipo) => (
+                  <MenuItem
+                    key={tipo.idTipoVehiculo}
+                    value={String(tipo.idTipoVehiculo)}
+                  >
+                    {tipo.nombreTipoVehiculo}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
                 type="number"
                 fullWidth
-                label="Cantidad de vehículos"
+                label={
+                  tipoElegido
+                    ? `Cantidad de ${nombreVehiculos(tipoElegido)}`
+                    : 'Cantidad de vehículos'
+                }
                 value={cantidad}
                 onChange={(event) => setCantidad(event.target.value)}
                 slotProps={{
@@ -570,6 +652,7 @@ export default function RebalanceoPage() {
                   <TableCell>Origen</TableCell>
                   <TableCell>Destino</TableCell>
                   <TableCell align="right">Cantidad</TableCell>
+                  <TableCell>Tipo de vehículo</TableCell>
                   <TableCell>Operador</TableCell>
                   <TableCell>Fecha</TableCell>
                   <TableCell>Estado</TableCell>
@@ -588,6 +671,7 @@ export default function RebalanceoPage() {
                     <TableCell align="right">
                       {orden.cantidadVehiculos}
                     </TableCell>
+                    <TableCell>{tiposTrasladados(orden)}</TableCell>
                     <TableCell>
                       {nombreOperador(orden.idOperador)}
                     </TableCell>
@@ -611,7 +695,7 @@ export default function RebalanceoPage() {
                 {ordenes.length === 0 && (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       align="center"
                       sx={{ py: 4 }}
                     >

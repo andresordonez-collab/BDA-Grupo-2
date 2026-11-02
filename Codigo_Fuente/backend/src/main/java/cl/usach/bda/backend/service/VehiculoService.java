@@ -3,7 +3,10 @@
 
 package cl.usach.bda.backend.service;
 
+import cl.usach.bda.backend.dto.VehiculoDetalleDTO;
+import cl.usach.bda.backend.entities.TipoVehiculoEntity;
 import cl.usach.bda.backend.entities.VehiculoEntity;
+import cl.usach.bda.backend.repository.TipoVehiculoRepository;
 import cl.usach.bda.backend.repository.VehiculoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
@@ -18,18 +21,47 @@ import java.util.NoSuchElementException;
 public class VehiculoService {
 
     private final VehiculoRepository vehiculoRepository;
+    private final TipoVehiculoRepository tipoVehiculoRepository;
 
-    public VehiculoService(VehiculoRepository vehiculoRepository) {
+    public VehiculoService(VehiculoRepository vehiculoRepository,
+                           TipoVehiculoRepository tipoVehiculoRepository) {
         this.vehiculoRepository = vehiculoRepository;
+        this.tipoVehiculoRepository = tipoVehiculoRepository;
+    }
+
+    // Una bicicleta no tiene batería; un scooter la necesita (entre 0 y 100) para poder iniciar viajes.
+    private void validarBateriaSegunTipo(VehiculoEntity vehiculo) {
+        if (vehiculo.getIdTipoVehiculo() == null) {
+            throw new IllegalArgumentException("Debe indicar el tipo de vehículo.");
+        }
+
+        String tipo = tipoVehiculoRepository.findById(vehiculo.getIdTipoVehiculo())
+                .map(TipoVehiculoEntity::getNombreTipoVehiculo)
+                .orElseThrow(() -> new IllegalArgumentException("El tipo de vehículo indicado no existe."));
+        Integer bateria = vehiculo.getNivelBateria();
+
+        if ("Bicicleta".equals(tipo) && bateria != null) {
+            throw new IllegalArgumentException(
+                    "Una bicicleta no tiene batería: el nivel de batería debe quedar vacío.");
+        }
+        if ("Scooter".equals(tipo) && (bateria == null || bateria < 0 || bateria > 100)) {
+            throw new IllegalArgumentException(
+                    "Un scooter requiere un nivel de batería entre 0 y 100.");
+        }
     }
 
     @Transactional
     public VehiculoEntity guardarVehiculo(VehiculoEntity vehiculo) {
+        validarBateriaSegunTipo(vehiculo);
         return vehiculoRepository.save(vehiculo);
     }
 
     public List<VehiculoEntity> listarVehiculos() {
         return vehiculoRepository.findAll();
+    }
+
+    public List<VehiculoDetalleDTO> listarVehiculosConDetalle() {
+        return vehiculoRepository.findAllConDetalle();
     }
 
     public VehiculoEntity obtenerVehiculoPorId(Long idVehiculo) {
@@ -73,6 +105,8 @@ public class VehiculoService {
 
     // El ID utilizado por el repositorio siempre procede de la sesión.
         idOperador = idAutenticado;
+
+        validarBateriaSegunTipo(vehiculo);
 
         boolean actualizado = vehiculoRepository.update(idVehiculo, vehiculo, idOperador, motivo);
         if (!actualizado) {

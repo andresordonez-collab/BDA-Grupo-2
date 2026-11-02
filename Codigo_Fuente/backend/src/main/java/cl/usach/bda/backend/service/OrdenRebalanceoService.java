@@ -1,5 +1,6 @@
 package cl.usach.bda.backend.service;
 
+import cl.usach.bda.backend.dto.OrdenRebalanceoDetalleDTO;
 import cl.usach.bda.backend.entities.OrdenRebalanceoEntity;
 import cl.usach.bda.backend.repository.OrdenRebalanceoRepository;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,10 @@ public class OrdenRebalanceoService {
 
     public List<OrdenRebalanceoEntity> listarOrdenesRebalanceo() {
         return repository.findAll();
+    }
+
+    public List<OrdenRebalanceoDetalleDTO> listarOrdenesRebalanceoConDetalle() {
+        return repository.findAllConDetalle();
     }
 
     public OrdenRebalanceoEntity obtenerOrdenRebalanceoPorId(Long idOrden) {
