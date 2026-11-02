@@ -31,6 +31,10 @@ La autenticación utiliza JWT en la cookie HttpOnly `access_token`. El filtro va
 
 Docker con Compose v2 y Git. Durante la primera construcción se necesita Internet para descargar imágenes y dependencias. Java, Node.js y PostgreSQL se ejecutan dentro de los contenedores.
 
+### Advertencia:
+
+Debe tener en su computador los puertos 8080, 5173 y 5432 libres.
+
 ### Paso 1: descargar el proyecto
 
 ```bash
