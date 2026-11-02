@@ -214,7 +214,7 @@ export default function TarifasPage() {
   return (
     <EntityCrudPage
       title="Tarifas"
-      description="Administra los valores de desbloqueo y por minuto de cada tipo de vehículo."
+      description="Valores de desbloqueo y por minuto por tipo de vehículo."
       entityName="tarifa"
       createLabel="Nueva tarifa"
       service={tarifaService}

@@ -22,7 +22,6 @@ public class ViajeRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Mapeo de filas de la tabla viajes a objetos ViajeEntity.
     private static final RowMapper<ViajeEntity> VIAJES_ROW_MAPPER = (rs, rowNum) ->
             ViajeEntity.builder()
                     .idViaje(rs.getLong("id_viaje"))
@@ -94,18 +93,17 @@ public class ViajeRepository {
         return filasAfectadas > 0;
     }
 
-    // Antes del viaje, igual que PA1. No comprobar capacidad ni actividad aquí.
     public boolean bloquearEstacion(Long idEstacion) {
         return !jdbcTemplate.query("SELECT id_estacion FROM estaciones WHERE id_estacion = ? FOR UPDATE",
                 (rs, row) -> rs.getLong("id_estacion"), idEstacion).isEmpty();
     }
 
-    // Bloquear la fila completa impide cambiar id_usuario hasta finalizar la transacción.
     public Optional<Long> bloquearYObtenerPropietario(Long idViaje) {
         return jdbcTemplate.query("SELECT id_usuario FROM viajes WHERE id_viaje = ? FOR UPDATE",
                 (rs, row) -> rs.getLong("id_usuario"), idViaje).stream().findFirst();
     }
 
+    // Tarea 3: Llama al procedimiento finalizar_viaje.
     public void finalizar(Long idViaje, Long idEstacionDestino) {
         jdbcTemplate.execute("CALL finalizar_viaje(?, ?)", (PreparedStatementCallback<Void>) statement -> {
             statement.setLong(1, idViaje);
@@ -115,7 +113,7 @@ public class ViajeRepository {
         });
     }
 
-    // El cálculo vive en la BD (fn_resumen_mensual_usuario); aquí solo se llama y se mapea.
+    // Tarea 10: Llama a fn_resumen_mensual_usuario, que calcula viajes, minutos y gasto.
     public ResumenMensualDTO obtenerResumenMensual(Long idUsuario, int anio, int mes) {
         return jdbcTemplate.queryForObject(
                 "SELECT cantidad_viajes, minutos_totales, gasto_total FROM fn_resumen_mensual_usuario(?, ?, ?)",
@@ -128,7 +126,7 @@ public class ViajeRepository {
                 idUsuario, anio, mes);
     }
 
-    // Toda la lógica (bloqueos, tarifa, viaje, vehículo) vive en fn_iniciar_viaje.
+    // Tarea 2: Llama a fn_iniciar_viaje.
     public Long iniciar(Long idUsuario, Long idVehiculo) {
         return jdbcTemplate.queryForObject("SELECT fn_iniciar_viaje(?, ?)", Long.class, idUsuario, idVehiculo);
     }

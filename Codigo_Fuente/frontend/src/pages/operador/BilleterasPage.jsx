@@ -3,6 +3,7 @@ import { Typography } from '@mui/material';
 import EntityCrudPage from '../../components/common/EntityCrudPage';
 import billeteraService from '../../services/billeteraService';
 import usuarioService from '../../services/usuarioService';
+import rolService from '../../services/rolService';
 
 const formatoSaldo = new Intl.NumberFormat('es-CL', {
   style: 'currency',
@@ -13,27 +14,34 @@ const formatoSaldo = new Intl.NumberFormat('es-CL', {
 
 export default function BilleterasPage() {
   const [usuarios, setUsuarios] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [billeteras, setBilleteras] = useState([]);
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let activo = true;
 
-    usuarioService
-      .getAll()
-      .then(({ data }) => {
-        if (activo) {
-          setUsuarios(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch(() => {
-        if (activo) {
-          setUsuarios([]);
-        }
-      });
+    const lista = (resultado) =>
+      resultado.status === 'fulfilled' && Array.isArray(resultado.value.data)
+        ? resultado.value.data
+        : [];
+
+    Promise.allSettled([
+      usuarioService.getAll(),
+      rolService.getAll(),
+      billeteraService.getAll(),
+    ]).then(([resUsuarios, resRoles, resBilleteras]) => {
+      if (!activo) return;
+
+      setUsuarios(lista(resUsuarios));
+      setRoles(lista(resRoles));
+      setBilleteras(lista(resBilleteras));
+    });
 
     return () => {
       activo = false;
     };
-  }, []);
+  }, [revision]);
 
   const mapaUsuarios = useMemo(
     () =>
@@ -46,14 +54,25 @@ export default function BilleterasPage() {
     [usuarios]
   );
 
-  const opcionesUsuario = useMemo(
-    () =>
-      usuarios.map((usuario) => ({
+  const opcionesUsuario = useMemo(() => {
+    const nombreRol = new Map(
+      roles.map((rol) => [String(rol.idRol), rol.nombreRol])
+    );
+    const conBilletera = new Set(
+      billeteras.map((billetera) => String(billetera.idUsuario))
+    );
+
+    return usuarios
+      .filter(
+        (usuario) =>
+          nombreRol.get(String(usuario.idRol)) === 'Usuario' &&
+          !conBilletera.has(String(usuario.idUsuario))
+      )
+      .map((usuario) => ({
         value: String(usuario.idUsuario),
         label: `${usuario.nombreUsuario} · ${usuario.email}`,
-      })),
-    [usuarios]
-  );
+      }));
+  }, [usuarios, roles, billeteras]);
 
   const columns = [
     {
@@ -103,7 +122,11 @@ export default function BilleterasPage() {
       type: 'select',
       options: opcionesUsuario,
       required: true,
-      helperText: 'Cada usuario puede tener una sola billetera.',
+      showOnEdit: false,
+      helperText:
+        opcionesUsuario.length === 0
+          ? 'No hay usuarios sin billetera.'
+          : 'Usuarios sin billetera.',
     },
     {
       name: 'saldo',
@@ -111,8 +134,6 @@ export default function BilleterasPage() {
       type: 'number',
       step: 0.01,
       required: true,
-      helperText:
-        'Puede ser negativo si el usuario tiene deuda por viajes.',
     },
   ];
 
@@ -137,8 +158,8 @@ export default function BilleterasPage() {
     saldo: Number(form.saldo),
   });
 
-  const validate = (form) => {
-    if (!form.idUsuario) {
+  const validate = (form, editando) => {
+    if (!editando && !form.idUsuario) {
       return 'Selecciona un usuario.';
     }
 
@@ -155,10 +176,11 @@ export default function BilleterasPage() {
   return (
     <EntityCrudPage
       title="Billeteras"
-      description="Administra el saldo disponible de cada usuario."
+      description="Saldo de cada usuario."
       entityName="billetera"
       createLabel="Nueva billetera"
       service={billeteraService}
+      onCambio={() => setRevision((valor) => valor + 1)}
       idField="idBilletera"
       columns={columns}
       fields={fields}

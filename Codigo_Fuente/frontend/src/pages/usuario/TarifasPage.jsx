@@ -54,7 +54,7 @@ export default function TarifasPage() {
             Tarifas
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Consulta el desbloqueo y el precio por minuto de cada vehículo.
+            Desbloqueo y precio por minuto por vehículo.
           </Typography>
         </Box>
 

@@ -28,7 +28,6 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // 1. Recurso no encontrado (404 Not Found)
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, Object>> manejarNoEncontrado(NoSuchElementException ex) {
         return construirRespuesta(HttpStatus.NOT_FOUND, "RECURSO_NO_ENCONTRADO", ex.getMessage());
@@ -49,7 +48,6 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, "INICIAR_VIAJE_RECHAZADO", ex.getMessage());
     }
 
-    // 2. Argumentos inválidos o reglas de negocio en Service (400 Bad Request)
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<Map<String, Object>> manejarSolicitudInvalida(Exception ex) {
         String mensaje = ex instanceof IllegalArgumentException
@@ -69,7 +67,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    // 3. Violación de restricciones SQL: UNIQUE, FOREIGN KEY, CHECK, NOT NULL (409 Conflict / 400 Bad Request)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> manejarIntegridadDatos(DataIntegrityViolationException ex, HttpServletRequest request) {
         if (esFinalizacionViaje(request)) {
@@ -80,16 +77,13 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, "VIOLACION_INTEGRIDAD_BD", detalle);
     }
 
-    // 4. Errores generales de PostgreSQL, incluidos RAISE EXCEPTION de Triggers y SPs (SQLState P0001)
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> manejarErrorBaseDatos(DataAccessException ex, HttpServletRequest request) {
-        // El servicio de rebalanceo ya clasifica los rechazos de negocio conocidos.
         if (esRebalanceo(request) || esFinalizacionViaje(request)) {
             return manejarErrorInterno(ex, request);
         }
         Throwable causaRaiz = ex.getMostSpecificCause();
         if (causaRaiz instanceof SQLException sqlEx && "P0001".equals(sqlEx.getSQLState())) {
-            // Mensaje lanzado explícitamente por un Trigger o Procedimiento Almacenado
             return construirRespuesta(HttpStatus.BAD_REQUEST, "REGLA_NEGOCIO_BD", sqlEx.getMessage());
         }
         LOGGER.error("Error de acceso a datos en PostgreSQL", ex);

@@ -20,8 +20,6 @@ public class EstacionRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Row mapper para mapear las filas de la tabla a la entidad.
-
     private static final RowMapper<EstacionEntity> ESTACION_ROW_MAPPER = (rs, rowNum) ->
             EstacionEntity.builder()
                     .idEstacion(rs.getLong("id_estacion"))
@@ -33,11 +31,6 @@ public class EstacionRepository {
                     .estacionActiva(rs.getObject("estacion_activa", Boolean.class))
                     .build();
 
-    // CRUD.
-
-    // CREATE.
-
-    // Crear una nueva estación.
     public EstacionEntity save(EstacionEntity estacion){
         String sql = "INSERT INTO estaciones(" +
                 "nombre_estacion, " +
@@ -64,17 +57,11 @@ public class EstacionRepository {
 
     };
 
-    // READ.
-
-    // Obtener todas las estaciones.
     public List<EstacionEntity> findAll(){
         String sql = "SELECT * FROM estaciones ORDER BY id_estacion ASC";
         return jdbcTemplate.query(sql, ESTACION_ROW_MAPPER);
     };
 
-    // Obtener todas las estaciones con su ocupación y sus vehículos disponibles por tipo.
-    // Ocupación: todo vehículo anclado en la estación, sea cual sea su estado (misma regla que
-    // finalizar_viaje y rebalancear_flota). Las estaciones sin vehículos aparecen con ceros.
     public List<EstacionDetalleDTO> findAllConDetalle(){
         String sql = """
                 SELECT
@@ -121,7 +108,6 @@ public class EstacionRepository {
         ));
     };
 
-    // Obtener una estación por su ID.
     public Optional<EstacionEntity> findById(Long idEstacion){
         String sql = "SELECT * FROM estaciones WHERE id_estacion = ?";
         return jdbcTemplate.query(sql, ESTACION_ROW_MAPPER, idEstacion)
@@ -129,9 +115,6 @@ public class EstacionRepository {
                 .findFirst();
     };
 
-    // UPDATE.
-
-    // Actualizar una estación existente.
     public boolean update(Long idEstacion, EstacionEntity estacion){
         String sql = "UPDATE estaciones " +
                 "SET nombre_estacion = ?," +
@@ -153,15 +136,13 @@ public class EstacionRepository {
         return filasAfectadas > 0;
     };
 
-    // DELETE.
-
-    // Eliminar una estación por su ID.
     public boolean deleteById(Long idEstacion) {
         String sql = "DELETE FROM estaciones WHERE id_estacion = ?";
         int filasAfectadas = jdbcTemplate.update(sql, idEstacion);
         return filasAfectadas > 0;
     };
 
+    // Tarea 9: Calcula en la BD las bicicletas y scooters disponibles y la batería promedio por estación.
     public List<DisponibilidadEstacionDTO> obtenerDisponibilidad() {
 
         String sql = """
@@ -200,7 +181,6 @@ public class EstacionRepository {
         );
     }
 
-    // Vehículos disponibles y anclados en una estación (para elegir cuál tomar).
     public List<VehiculoDisponibleDTO> listarVehiculosDisponibles(Long idEstacion) {
         String sql = """
                 SELECT

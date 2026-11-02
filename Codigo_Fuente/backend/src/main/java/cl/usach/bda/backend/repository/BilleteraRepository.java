@@ -19,7 +19,6 @@ public class BilleteraRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Row mapper para mapear las filas de la tabla a la entidad.
     private static final RowMapper<BilleteraEntity> BILLETERAS_ROW_MAPPER = (rs, rowNum) ->
             BilleteraEntity.builder()
                     .idBilletera(rs.getLong("id_billetera"))
@@ -27,7 +26,6 @@ public class BilleteraRepository {
                     .saldo(rs.getBigDecimal("saldo"))
                     .build();
 
-    // Crear un registro y obtener el ID generado por PostgreSQL.
     public BilleteraEntity save(BilleteraEntity billetera) {
         String sql = "INSERT INTO billeteras (id_usuario, saldo)"
                 + " VALUES (?, COALESCE(?, 0.00)) RETURNING id_billetera";
@@ -36,17 +34,14 @@ public class BilleteraRepository {
                 billetera.getSaldo()
         );
         billetera.setIdBilletera(idGenerado);
-        // Leer los valores predeterminados aplicados por PostgreSQL.
         return findById(idGenerado).orElseThrow();
     }
 
-    // Obtener todos los registros.
     public List<BilleteraEntity> findAll() {
         String sql = "SELECT * FROM billeteras ORDER BY id_billetera ASC";
         return jdbcTemplate.query(sql, BILLETERAS_ROW_MAPPER);
     }
 
-    // Obtener un registro por su ID.
     public Optional<BilleteraEntity> findById(Long idBilletera) {
         String sql = "SELECT * FROM billeteras WHERE id_billetera = ?";
         return jdbcTemplate.query(sql, BILLETERAS_ROW_MAPPER, idBilletera)
@@ -54,7 +49,6 @@ public class BilleteraRepository {
                 .findFirst();
     }
 
-    // Actualizar un registro existente.
     public boolean update(Long idBilletera, BilleteraEntity billetera) {
         String sql = "UPDATE billeteras SET id_usuario = ?, saldo = COALESCE(?, saldo)"
                 + " WHERE id_billetera = ?";
@@ -66,14 +60,12 @@ public class BilleteraRepository {
         return filasAfectadas > 0;
     }
 
-    // Eliminar un registro por su ID.
     public boolean deleteById(Long idBilletera) {
         String sql = "DELETE FROM billeteras WHERE id_billetera = ?";
         int filasAfectadas = jdbcTemplate.update(sql, idBilletera);
         return filasAfectadas > 0;
     }
 
-    // Billetera de un usuario (una por usuario).
     public Optional<BilleteraEntity> findByIdUsuario(Long idUsuario) {
         String sql = "SELECT * FROM billeteras WHERE id_usuario = ?";
         return jdbcTemplate.query(sql, BILLETERAS_ROW_MAPPER, idUsuario)
@@ -81,7 +73,19 @@ public class BilleteraRepository {
                 .findFirst();
     }
 
-    // Últimos movimientos de una billetera, del más reciente al más antiguo.
+    public boolean duenoTieneViajeActivo(Long idBilletera) {
+        String sql = """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM viajes v
+                    JOIN billeteras b ON b.id_usuario = v.id_usuario
+                    WHERE b.id_billetera = ?
+                      AND v.estado_viaje = 'Activo'
+                )
+                """;
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, idBilletera));
+    }
+
     public List<MovimientoBilleteraResumenDTO> listarMovimientosRecientes(Long idBilletera, int limite) {
         String sql = """
                 SELECT id_movimiento, tipo_movimiento, monto, fecha_movimiento, id_viaje

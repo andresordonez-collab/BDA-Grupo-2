@@ -25,6 +25,7 @@ public class ReporteRepository {
                     .viajesFinalizados(rs.getLong("viajes_finalizados"))
                     .build();
 
+    // Tarea 7: Lee la vista materializada mv_demanda_estacion_horaria.
     public List<DemandaEstacionHorariaDTO> obtenerDemandaEstacionHoraria() {
         String sql = """
                 SELECT id_estacion, nombre_estacion, franja_horaria,

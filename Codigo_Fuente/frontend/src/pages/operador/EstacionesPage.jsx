@@ -427,7 +427,7 @@ export default function EstacionesPage() {
       </Box>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Revisa la capacidad, ocupación y disponibilidad de cada estación.
+        Capacidad, ocupación y disponibilidad por estación.
       </Typography>
 
       <Box

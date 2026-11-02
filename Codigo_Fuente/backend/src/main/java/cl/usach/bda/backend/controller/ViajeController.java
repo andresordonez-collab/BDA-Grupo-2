@@ -56,6 +56,7 @@ public class ViajeController {
         return ResponseEntity.noContent().build();
     }
 
+    // Tarea 3: Finaliza un viaje propio llamando al procedimiento finalizar_viaje.
         @PostMapping("/{idViaje}/finalizar")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void finalizar(@PathVariable("idViaje") Long idViaje,
@@ -64,7 +65,7 @@ public class ViajeController {
         service.finalizar(idViaje, solicitud.idEstacionDestino(), idUsuario);
     }
 
-    // El usuario sale del JWT: cada usuario solo puede pedir su propio resumen.
+    // Tarea 10: Resumen mensual del usuario autenticado.
     @GetMapping("/resumen-mensual")
     public ResumenMensualDTO resumenMensual(@RequestParam(name = "anio", required = false) Integer anio,
                                             @RequestParam(name = "mes", required = false) Integer mes,
@@ -72,7 +73,7 @@ public class ViajeController {
         return service.resumenMensual(idUsuario, anio, mes);
     }
 
-    // El usuario sale del JWT y la estación origen, del propio vehículo.
+    // Tarea 2: Inicia un viaje del usuario autenticado en el vehículo indicado.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public IniciarViajeResponseDTO iniciar(@Valid @RequestBody IniciarViajeRequestDTO solicitud,
@@ -80,7 +81,7 @@ public class ViajeController {
         return new IniciarViajeResponseDTO(service.iniciar(solicitud.idVehiculo(), idUsuario));
     }
 
-    // El usuario sale del JWT: solo puede ver su propio historial.
+    // Tarea 2: Historial de viajes del usuario autenticado.
     @GetMapping("/mis-viajes")
     public List<ViajeHistorialDTO> misViajes(@RequestParam(name = "limite", required = false) Integer limite,
                                              @AuthenticationPrincipal Long idUsuario) {

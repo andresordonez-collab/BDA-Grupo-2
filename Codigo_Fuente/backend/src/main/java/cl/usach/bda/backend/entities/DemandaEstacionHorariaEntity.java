@@ -12,6 +12,6 @@ public class DemandaEstacionHorariaEntity {
     private Long idEstacion;
     private String nombreEstacion;
     private Integer franjaHoraria;
-    private Long viajesIniciados;     // COUNT(*) devuelve bigint
+    private Long viajesIniciados;
     private Long viajesFinalizados;
 }

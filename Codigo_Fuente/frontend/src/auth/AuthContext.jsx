@@ -13,6 +13,7 @@ import {
 
 const AuthContext = createContext(null);
 
+// Tarea 2: Mantiene la sesión del usuario consultando /api/auth/me; el JWT viaja en una cookie HttpOnly.
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -27,7 +28,6 @@ export function AuthProvider({ children }) {
     try {
       await authService.logout();
     } catch (err) {
-      // Si la cookie ya venció, igualmente limpiamos la sesión local.
       if (err.response?.status !== 401) {
         throw err;
       }

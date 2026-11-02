@@ -82,7 +82,7 @@ export default function Login({ onLogin }) {
               Bienvenido
             </Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
-              Ingresa a tu cuenta para continuar.
+              Acceso a tu cuenta.
             </Typography>
           </Box>
 

@@ -42,8 +42,6 @@ public class UsuarioRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Row mapper para mapear las filas de la tabla a la entidad.
-
     private static final RowMapper<UsuarioEntity> USUARIO_ROW_MAPPER = (rs, rowNum) ->
             UsuarioEntity.builder()
                     .idUsuario(rs.getLong("id_usuario"))
@@ -54,10 +52,6 @@ public class UsuarioRepository {
                     .usuarioActivo(rs.getObject("usuario_activo", Boolean.class))
                     .fechaRegistro(rs.getObject("fecha_registro", LocalDateTime.class))
                     .build();
-
-    // CRUD.
-
-    // CREATE
 
     public UsuarioEntity save(UsuarioEntity usuario) {
         String sql = """
@@ -78,15 +72,11 @@ public class UsuarioRepository {
                         "No se pudo recuperar el usuario recién creado."));
     }
 
-    // READ
-
-    // Obtener todos los registros de usuarios.
     public List<UsuarioEntity> findAll() {
         String sql = "SELECT * FROM usuarios ORDER BY id_usuario ASC";
         return jdbcTemplate.query(sql, USUARIO_ROW_MAPPER);
     }
 
-    // Obtener un registro por su ID.
     public Optional<UsuarioEntity> findById(Long idUsuario) {
         String sql = "SELECT * FROM usuarios WHERE id_usuario = ?";
         return jdbcTemplate.query(sql, USUARIO_ROW_MAPPER, idUsuario)
@@ -94,7 +84,6 @@ public class UsuarioRepository {
                 .findFirst();
     }
 
-    // Actualizar un registro existente.
     public boolean update(Long idUsuario, UsuarioEntity usuario) {
         String sql = """
         UPDATE usuarios
@@ -117,7 +106,6 @@ public class UsuarioRepository {
         return filasAfectadas > 0;
     }
 
-    // Eliminar un registro por su ID.
     public boolean deleteById(Long idUsuario) {
         String sql = "DELETE FROM usuarios WHERE id_usuario = ?";
         int filasAfectadas = jdbcTemplate.update(sql, idUsuario);

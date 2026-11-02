@@ -20,29 +20,24 @@ public class EstacionService {
         this.estacionRepository = estacionRepository;
     }
 
-    // Guardar una nueva estación.
     @Transactional
     public EstacionEntity guardarEstacion(EstacionEntity estacion) {
         return estacionRepository.save(estacion);
     }
 
-    // Listar todas las estaciones.
     public List<EstacionEntity> listarEstaciones() {
         return estacionRepository.findAll();
     }
 
-    // Listar todas las estaciones con su ocupación y disponibilidad por tipo.
     public List<EstacionDetalleDTO> listarEstacionesConDetalle() {
         return estacionRepository.findAllConDetalle();
     }
 
-    // Obtener una estación por su ID.
     public EstacionEntity obtenerEstacionPorId(Long idEstacion) {
         return estacionRepository.findById(idEstacion)
                 .orElseThrow(() -> new NoSuchElementException("Estación con ID " + idEstacion + " no encontrada."));
     }
 
-    // Actualizar una estación existente.
     @Transactional
     public EstacionEntity actualizarEstacion(Long idEstacion, EstacionEntity estacion){
         boolean actualizado = estacionRepository.update(idEstacion, estacion);
@@ -52,7 +47,6 @@ public class EstacionService {
         return obtenerEstacionPorId(idEstacion);
     }
 
-    // Eliminar una estación por su ID.
     @Transactional
     public void eliminarEstacion(Long idEstacion) {
         boolean eliminado = estacionRepository.deleteById(idEstacion);
@@ -61,12 +55,10 @@ public class EstacionService {
         }
     }
 
-    // Obtener la disponibilidad de todas las estaciones.
     public List<DisponibilidadEstacionDTO> obtenerDisponibilidad() {
         return estacionRepository.obtenerDisponibilidad();
     }
 
-    // Vehículos disponibles de una estación; 404 si la estación no existe.
     public List<VehiculoDisponibleDTO> listarVehiculosDisponibles(Long idEstacion) {
         obtenerEstacionPorId(idEstacion);
         return estacionRepository.listarVehiculosDisponibles(idEstacion);

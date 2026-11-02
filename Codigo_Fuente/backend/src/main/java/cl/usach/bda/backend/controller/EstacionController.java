@@ -21,38 +21,33 @@ public class EstacionController {
         this.estacionService = estacionService;
     }
 
-    // Endpoint para obtener la disponibilidad de todas las estaciones.
+    // Tarea 9: Estaciones con vehículos disponibles, con cantidad por tipo y batería promedio.
     @GetMapping("/disponibilidad")
     public List<DisponibilidadEstacionDTO> obtenerDisponibilidad() {
         return estacionService.obtenerDisponibilidad();
     }
 
-    // Endpoint para listar todas las estaciones, con su ocupación y vehículos disponibles por tipo.
     @GetMapping
     public ResponseEntity<List<EstacionDetalleDTO>> listarEstaciones() {
         return ResponseEntity.ok(estacionService.listarEstacionesConDetalle());
     }
 
-    // Endpoint para obtener una estación por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<EstacionEntity> obtenerPorId(@PathVariable("id") Long id) {
         return ResponseEntity.ok(estacionService.obtenerEstacionPorId(id));
     }
 
-    // Vehículos que se pueden tomar en una estación (lectura para cualquier usuario autenticado).
     @GetMapping("/{id}/vehiculos-disponibles")
     public ResponseEntity<List<VehiculoDisponibleDTO>> listarVehiculosDisponibles(@PathVariable("id") Long id) {
         return ResponseEntity.ok(estacionService.listarVehiculosDisponibles(id));
     }    
 
-    // Endpoint para crear una nueva estación.
     @PostMapping
     public ResponseEntity<EstacionEntity> crear(@RequestBody EstacionEntity estacion) {
         EstacionEntity creada = estacionService.guardarEstacion(estacion);
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
     }
 
-    // Endpoint para actualizar una estación existente.
     @PutMapping("/{id}")
     public ResponseEntity<EstacionEntity> actualizar(
             @PathVariable("id") Long id,
@@ -60,7 +55,6 @@ public class EstacionController {
         return ResponseEntity.ok(estacionService.actualizarEstacion(id, estacion));
     }
     
-    // Endpoint para eliminar una estación por su ID.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
         estacionService.eliminarEstacion(id);

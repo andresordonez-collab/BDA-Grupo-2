@@ -19,6 +19,7 @@ public class ReporteController {
         this.reporteService = reporteService;
     }
 
+    // Tarea 7: Demanda por estación y franja horaria, leída de la vista materializada.
     @GetMapping("/demanda-estacion-horaria")
     public ResponseEntity<List<DemandaEstacionHorariaDTO>> obtenerDemandaEstacionHoraria() {
         return ResponseEntity.ok(reporteService.obtenerDemandaEstacionHoraria());

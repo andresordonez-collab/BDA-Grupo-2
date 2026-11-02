@@ -30,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.usuarioRepository = usuarioRepository;
     }
 
+    // Tarea 2: Autentica cada solicitud con el JWT de la cookie y comprueba en la BD que el usuario siga activo.
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
@@ -70,7 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     context.setAuthentication(authentication);
                     SecurityContextHolder.setContext(context);
                 } catch (JwtException | IllegalArgumentException ex) {
-                    // Sin autenticación, las rutas protegidas responderán 401.
                     SecurityContextHolder.clearContext();
                 }
             }

@@ -19,6 +19,7 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -32,6 +33,8 @@ import VehiculoFormDialog from '../../components/operador/VehiculoFormDialog';
 import { getErrorMessage } from '../../http-common';
 
 const ESTADOS = ['Disponible', 'En uso', 'En mantención', 'Dado de baja'];
+
+const ESTADOS_ASIGNABLES = ['Disponible', 'En mantención', 'Dado de baja'];
 
 const COLOR_ESTADO = {
   Disponible: 'success',
@@ -65,7 +68,9 @@ function normalizarVehiculo(vehiculo) {
     estacion:
       vehiculo.nombreEstacion ??
       vehiculo.nombre_estacion ??
-      'Sin estación',
+      ((vehiculo.estadoVehiculo ?? vehiculo.estado_vehiculo) === 'En uso'
+        ? 'En viaje'
+        : 'Sin estación'),
   };
 }
 
@@ -119,7 +124,6 @@ export default function FlotaPage() {
   const [guardando, setGuardando] = useState(false);
 
   const [formAbierto, setFormAbierto] = useState(false);
-  const [vehiculoEditando, setVehiculoEditando] = useState(null);
   const [tiposCatalogo, setTiposCatalogo] = useState([]);
   const [estacionesCatalogo, setEstacionesCatalogo] = useState([]);
 
@@ -288,14 +292,6 @@ export default function FlotaPage() {
   };
 
   const abrirCrearVehiculo = () => {
-    setVehiculoEditando(null);
-    setError('');
-    setExito('');
-    setFormAbierto(true);
-  };
-
-  const abrirEditarVehiculo = (vehiculo) => {
-    setVehiculoEditando(vehiculo);
     setError('');
     setExito('');
     setFormAbierto(true);
@@ -303,12 +299,10 @@ export default function FlotaPage() {
 
   const cerrarFormulario = () => {
     setFormAbierto(false);
-    setVehiculoEditando(null);
   };
 
   const vehiculoGuardado = async () => {
     setFormAbierto(false);
-    setVehiculoEditando(null);
     setExito('Vehículo guardado correctamente.');
     await cargar();
   };
@@ -346,8 +340,7 @@ export default function FlotaPage() {
       </Box>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Revisa los vehículos registrados, su estación, batería y estado
-        operativo.
+        Vehículos con su estación, batería y estado operativo.
       </Typography>
 
       <Box
@@ -532,20 +525,24 @@ export default function FlotaPage() {
                         flexWrap: 'wrap',
                       }}
                     >
-                      <Button
-                        size="small"
-                        onClick={() => abrirEditarVehiculo(vehiculo)}
+                      <Tooltip
+                        title={
+                          vehiculo.estado === 'En uso'
+                            ? 'Vehículo en viaje.'
+                            : ''
+                        }
                       >
-                        Editar
-                      </Button>
-
-                      <Button
-                        size="small"
-                        startIcon={<EditIcon />}
-                        onClick={() => abrirDialogo(vehiculo)}
-                      >
-                        Cambiar estado
-                      </Button>
+                        <span>
+                          <Button
+                            size="small"
+                            startIcon={<EditIcon />}
+                            disabled={vehiculo.estado === 'En uso'}
+                            onClick={() => abrirDialogo(vehiculo)}
+                          >
+                            Cambiar estado
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -590,7 +587,7 @@ export default function FlotaPage() {
             onChange={(event) => setNuevoEstado(event.target.value)}
             sx={{ mt: 1 }}
           >
-            {ESTADOS.map((estado) => (
+            {ESTADOS_ASIGNABLES.map((estado) => (
               <MenuItem key={estado} value={estado}>
                 {estado}
               </MenuItem>
@@ -604,14 +601,8 @@ export default function FlotaPage() {
             label="Motivo"
             value={motivo}
             onChange={(event) => setMotivo(event.target.value)}
-            helperText="Obligatorio para En mantención o Dado de baja."
             sx={{ mt: 2 }}
           />
-
-          <Alert severity="info" sx={{ mt: 2 }}>
-            El cambio queda registrado en la auditoría con el operador
-            autenticado.
-          </Alert>
         </DialogContent>
 
         <DialogActions>
@@ -630,7 +621,7 @@ export default function FlotaPage() {
 
       <VehiculoFormDialog
         abierto={formAbierto}
-        vehiculo={vehiculoEditando}
+        vehiculo={null}
         tipos={tiposCatalogo}
         estaciones={estacionesCatalogo}
         onCerrar={cerrarFormulario}

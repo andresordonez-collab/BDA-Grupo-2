@@ -1,7 +1,3 @@
-// Datos de prueba basados en Base_De_Datos/loadDataLab1.sql.
-// Estas estructuras son mutables: los handlers actualizan vehículos,
-// auditorías y estaciones para simular el comportamiento del backend.
-
 export const operadores = [
   { idOperador: 1, nombreOperador: 'Camila Torres' },
   { idOperador: 2, nombreOperador: 'Diego Rojas' },
@@ -274,7 +270,6 @@ export const auditorias = [
   },
 ];
 
-// Patrón artificial de demanda: horas punta 8, 12 y 18.
 const FACTOR_HORA = [
   0, 0, 0, 0, 0, 0, 1, 3, 7, 4, 2, 3, 5, 3, 2, 3, 5, 7, 8, 5, 3, 2, 1, 0,
 ];

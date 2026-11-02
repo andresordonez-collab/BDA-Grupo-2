@@ -121,6 +121,8 @@ export default function EntityCrudPage({
   validate,
   getLabel,
   canDelete = true,
+  canEdit = true,
+  onCambio,
 }) {
   const [items, setItems] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -207,6 +209,7 @@ export default function EntityCrudPage({
 
       setDialogoAbierto(false);
       await cargar();
+      onCambio?.();
     } catch (err) {
       setErrorFormulario(getErrorMessage(err));
     } finally {
@@ -225,6 +228,7 @@ export default function EntityCrudPage({
       setExito(`${entityName} eliminado correctamente.`);
       setAEliminar(null);
       await cargar();
+      onCambio?.();
     } catch (err) {
       setError(getErrorMessage(err));
       setAEliminar(null);
@@ -336,13 +340,15 @@ export default function EntityCrudPage({
                         flexWrap: 'wrap',
                       }}
                     >
-                      <Button
-                        size="small"
-                        startIcon={<EditIcon />}
-                        onClick={() => abrirEditar(item)}
-                      >
-                        Editar
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          size="small"
+                          startIcon={<EditIcon />}
+                          onClick={() => abrirEditar(item)}
+                        >
+                          Editar
+                        </Button>
+                      )}
 
                       {canDelete && (
                         <Button

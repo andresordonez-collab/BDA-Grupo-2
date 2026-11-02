@@ -11,13 +11,12 @@ import java.util.List;
 
 @Service
 public class RebalanceoService {
-    // RAISE EXCEPTION sin ERRCODE usa P0001. Reconocer solo rechazos conocidos
-    // evita presentar errores de configuración (p. ej. aislamiento) como negocio.
     private static final List<String> RECHAZOS = List.of(
             "La cantidad de vehículos debe ser mayor que cero.",
             "Debe indicar las estaciones de origen y destino.",
             "Las estaciones de origen y destino deben ser diferentes.",
-            "La estación de origen ", "La estación de destino ", "El usuario ", "El tipo de vehículo ");
+            "La estación de origen ", "La estación de destino ", "El usuario ", "El tipo de vehículo ",
+            "Debe indicar el tipo de vehículo");
 
     private final RebalanceoRepository repository;
 
@@ -25,6 +24,7 @@ public class RebalanceoService {
         this.repository = repository;
     }
 
+    // Tarea 4: Ejecuta el rebalanceo y traduce los rechazos del procedimiento a errores de negocio.
     public void rebalancear(RebalanceoRequestDTO solicitud, Long idOperador) {
         try {
             repository.rebalancear(solicitud, idOperador);

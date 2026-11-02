@@ -50,7 +50,6 @@ public class OrdenRebalanceoRepository {
         return jdbcTemplate.query(sql, ORDENES_REBALANCEO_ROW_MAPPER);
     }
 
-    // Órdenes con el desglose por tipo de los vehículos trasladados (según detalles_rebalanceo).
     public List<OrdenRebalanceoDetalleDTO> findAllConDetalle() {
         String sql = """
                 SELECT

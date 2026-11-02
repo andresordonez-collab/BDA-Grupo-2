@@ -21,6 +21,8 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Tarea 2: Reglas de acceso por rol. Los usuarios inician y finalizan sus viajes y ven su historial;
+    // los operadores administran la flota y las estaciones.
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http,

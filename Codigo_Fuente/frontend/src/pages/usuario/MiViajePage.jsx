@@ -9,7 +9,6 @@ import estacionService from '../../services/estacionService';
 import { getErrorMessage } from '../../http-common';
 import { formatearFechaHora } from '../../utils/formato';
 
-// El backend valida la batería de los scooters al iniciar; aquí solo se evita elegir uno que se sabe que será rechazado.
 const BATERIA_MINIMA = 20;
 
 function bateriaInsuficiente(vehiculo) {
@@ -20,7 +19,7 @@ function bateriaInsuficiente(vehiculo) {
 function descripcionVehiculo(vehiculo) {
   const base = `${vehiculo.tipoVehiculo} ${vehiculo.codigoVehiculo}`;
   if (typeof vehiculo.nivelBateria !== 'number') return base;
-  const aviso = bateriaInsuficiente(vehiculo) ? ' (insuficiente)' : '';
+  const aviso = bateriaInsuficiente(vehiculo) ? ' (batería baja)' : '';
   return `${base} · batería ${vehiculo.nivelBateria}%${aviso}`;
 }
 
@@ -78,7 +77,6 @@ export default function MiViajePage() {
     return () => controller.abort();
   }, [revision]);
 
-  // Al elegir una estación de origen se consultan sus vehículos disponibles.
   useEffect(() => {
     if (!idEstacionOrigen) return undefined;
 
@@ -108,7 +106,6 @@ export default function MiViajePage() {
     return () => controller.abort();
   }, [idEstacionOrigen, revision]);
 
-  // Sin estación elegida no hay vehículos que mostrar (evita restos de una consulta anterior).
   const vehiculosDisponibles = idEstacionOrigen ? vehiculos : [];
 
   async function manejarViaje(event) {
@@ -145,7 +142,6 @@ export default function MiViajePage() {
     } catch (err) {
       setErrorAccion(getErrorMessage(err));
     } finally {
-      // Volvemos a consultar el estado real antes de permitir otra operación.
       setCargando(true);
       setEnviando(false);
       setRevision((valor) => valor + 1);
@@ -160,7 +156,7 @@ export default function MiViajePage() {
             Mi viaje
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Comienza tu recorrido o registra tu estación de llegada.
+            Inicio y fin de tu viaje.
           </Typography>
         </Box>
 
@@ -234,7 +230,7 @@ export default function MiViajePage() {
                 ) : (
                   <>
                     <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      Comienza un nuevo recorrido
+                      Nuevo viaje
                     </Typography>
                     <TextField
                       select
@@ -244,7 +240,6 @@ export default function MiViajePage() {
                         setIdEstacionOrigen(event.target.value);
                         setIdVehiculo('');
                       }}
-                      helperText="Elige la estación donde tomarás el vehículo."
                       disabled={enviando || estaciones.length === 0}
                       required
                       fullWidth
@@ -270,7 +265,6 @@ export default function MiViajePage() {
                       label="Vehículo"
                       value={idVehiculo}
                       onChange={(event) => setIdVehiculo(event.target.value)}
-                      helperText="Solo se listan los vehículos disponibles en esa estación."
                       disabled={
                         enviando ||
                         !idEstacionOrigen ||
@@ -284,7 +278,6 @@ export default function MiViajePage() {
                         <MenuItem
                           key={vehiculo.idVehiculo}
                           value={String(vehiculo.idVehiculo)}
-                          disabled={bateriaInsuficiente(vehiculo)}
                         >
                           {descripcionVehiculo(vehiculo)}
                         </MenuItem>

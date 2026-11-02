@@ -217,7 +217,7 @@ export default function AuditoriaPage() {
       </Typography>
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        Solo se auditan los cambios a “En mantención” y “Dado de baja”.
+        Cambios a “En mantención” y “Dado de baja”.
       </Alert>
 
       <Box

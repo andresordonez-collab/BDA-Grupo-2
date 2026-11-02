@@ -58,7 +58,7 @@ export default function HistorialPage() {
             Mi historial
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Consulta tus últimos 50 viajes y su estado.
+            Últimos 50 viajes.
           </Typography>
         </Box>
 

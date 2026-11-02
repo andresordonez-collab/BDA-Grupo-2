@@ -41,7 +41,6 @@ public class DetalleRebalanceoRepository {
     }
 
     public DetalleRebalanceoEntity save(DetalleRebalanceoEntity detalleRebalanceo) {
-        // La PK es compuesta: no se genera un identificador con RETURNING.
         String sql = "INSERT INTO detalles_rebalanceo (id_orden, id_vehiculo) VALUES (?, ?)";
         jdbcTemplate.update(sql, detalleRebalanceo.getIdOrden(), detalleRebalanceo.getIdVehiculo());
         return findById(detalleRebalanceo.getIdOrden(), detalleRebalanceo.getIdVehiculo()).orElseThrow();

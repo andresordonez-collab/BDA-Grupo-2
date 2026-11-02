@@ -13,7 +13,6 @@ const remove = (id) => http.delete(`/api/estaciones/${id}`);
 const getDisponibilidad = () =>
   http.get('/api/estaciones/disponibilidad');
 
-// Vehículos disponibles y anclados en una estación (lectura para cualquier usuario autenticado).
 const getVehiculosDisponibles = (idEstacion, signal) =>
   http.get(`/api/estaciones/${idEstacion}/vehiculos-disponibles`, { signal });
 

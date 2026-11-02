@@ -26,8 +26,7 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    // Devuelve vacío tanto si el email no existe, como si el usuario está inactivo o la
-    // contraseña es incorrecta: el cliente no debe poder distinguir cuál fue el caso.
+    // Tarea 2: Valida email, estado y contraseña; ante cualquier fallo devuelve el mismo resultado vacío.
     public Optional<ResultadoLogin> autenticar(String email, String password) {
         return usuarioRepository.buscarPorEmail(email)
                 .filter(usuario -> Boolean.TRUE.equals(usuario.usuarioActivo()))
@@ -39,7 +38,6 @@ public class AuthService {
                 ));
     }
 
-    // El token solo dice quién es; el estado real (activo, rol vigente) se lee de la BD.
     public Optional<SesionDTO> obtenerSesion(Long idUsuario) {
         return usuarioRepository.buscarPorId(idUsuario)
                 .filter(usuario -> Boolean.TRUE.equals(usuario.usuarioActivo()))

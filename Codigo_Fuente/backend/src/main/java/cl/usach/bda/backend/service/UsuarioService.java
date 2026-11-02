@@ -21,7 +21,6 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    // Convertir la entidad a una respuesta sin contraseña.
     private UsuarioResponseDTO toResponse(UsuarioEntity usuario) {
         return new UsuarioResponseDTO(
                 usuario.getIdUsuario(),
@@ -33,7 +32,6 @@ public class UsuarioService {
         );
     }
 
-    // Obtener la entidad para operaciones internas del servicio.
     private UsuarioEntity buscarUsuarioExistente(Long idUsuario) {
         return usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new NoSuchElementException(
@@ -41,7 +39,6 @@ public class UsuarioService {
                 ));
     }
 
-    // Validar y codificar una contraseña recibida en texto plano.
     private String codificarPassword(String password) {
         if (password == null || password.isBlank()) {
             throw new IllegalArgumentException("La contraseña no puede estar vacía.");
@@ -49,18 +46,15 @@ public class UsuarioService {
         return passwordEncoder.encode(password);
     }
 
-    // Guardar un nuevo usuario.
     @Transactional
     public UsuarioResponseDTO guardarUsuario(UsuarioEntity usuario) {
         usuario.setPasswordHash(codificarPassword(usuario.getPasswordHash()));
 
         UsuarioEntity creado = usuarioRepository.save(usuario);
 
-        // Recuperar también los valores predeterminados de la BD.
         return toResponse(buscarUsuarioExistente(creado.getIdUsuario()));
     }
 
-    // Listar todos los usuarios.
     public List<UsuarioResponseDTO> listarUsuarios() {
         return usuarioRepository.findAll()
                 .stream()
@@ -68,25 +62,20 @@ public class UsuarioService {
                 .toList();
     }
 
-    // Obtener un usuario por su ID.
     public UsuarioResponseDTO obtenerUsuarioPorId(Long idUsuario) {
         return toResponse(buscarUsuarioExistente(idUsuario));
     }
 
-    // Actualizar un usuario existente.
     @Transactional
     public UsuarioResponseDTO actualizarUsuario(Long idUsuario, UsuarioEntity usuario) {
 
         UsuarioEntity existente = buscarUsuarioExistente(idUsuario);
 
         if (usuario.getPasswordHash() == null) {
-            // Si no se envía contraseña, conservar el hash actual.
             usuario.setPasswordHash(existente.getPasswordHash());
         } else {
-            // Si se envía una nueva, validarla y codificarla.
             usuario.setPasswordHash(codificarPassword(usuario.getPasswordHash()));
         }
-        // La fecha de registro no cambia al actualizar.
         usuario.setFechaRegistro(existente.getFechaRegistro());
 
         boolean actualizado = usuarioRepository.update(idUsuario,usuario);
@@ -101,7 +90,6 @@ public class UsuarioService {
         return toResponse(buscarUsuarioExistente(idUsuario));
     }
 
-    // Eliminar un usuario por su ID.
     @Transactional
     public void eliminarUsuario(Long idUsuario) {
         boolean eliminado = usuarioRepository.deleteById(idUsuario);

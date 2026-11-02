@@ -18,7 +18,6 @@ public class MovimientoBilleteraRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Row mapper para mapear las filas de la tabla a la entidad.
     private static final RowMapper<MovimientoBilleteraEntity> MOVIMIENTOS_BILLETERAS_ROW_MAPPER = (rs, rowNum) ->
             MovimientoBilleteraEntity.builder()
                     .idMovimiento(rs.getLong("id_movimiento"))
@@ -29,7 +28,6 @@ public class MovimientoBilleteraRepository {
                     .fechaMovimiento(rs.getObject("fecha_movimiento", LocalDateTime.class))
                     .build();
 
-    // Crear un registro y obtener el ID generado por PostgreSQL.
     public MovimientoBilleteraEntity save(MovimientoBilleteraEntity movimientoBilletera) {
         String sql = "INSERT INTO movimientos_billeteras (id_billetera, id_viaje, tipo_movimiento, monto, fecha_movimiento)"
                 + " VALUES (?, ?, ?, ?, COALESCE(?, LOCALTIMESTAMP)) RETURNING id_movimiento";
@@ -41,17 +39,14 @@ public class MovimientoBilleteraRepository {
                 movimientoBilletera.getFechaMovimiento()
         );
         movimientoBilletera.setIdMovimiento(idGenerado);
-        // Leer los valores predeterminados aplicados por PostgreSQL.
         return findById(idGenerado).orElseThrow();
     }
 
-    // Obtener todos los registros.
     public List<MovimientoBilleteraEntity> findAll() {
         String sql = "SELECT * FROM movimientos_billeteras ORDER BY id_movimiento ASC";
         return jdbcTemplate.query(sql, MOVIMIENTOS_BILLETERAS_ROW_MAPPER);
     }
 
-    // Obtener un registro por su ID.
     public Optional<MovimientoBilleteraEntity> findById(Long idMovimiento) {
         String sql = "SELECT * FROM movimientos_billeteras WHERE id_movimiento = ?";
         return jdbcTemplate.query(sql, MOVIMIENTOS_BILLETERAS_ROW_MAPPER, idMovimiento)
@@ -59,7 +54,6 @@ public class MovimientoBilleteraRepository {
                 .findFirst();
     }
 
-    // Actualizar un registro existente.
     public boolean update(Long idMovimiento, MovimientoBilleteraEntity movimientoBilletera) {
         String sql = "UPDATE movimientos_billeteras SET id_billetera = ?, id_viaje = ?, tipo_movimiento = ?, monto = ?, fecha_movimiento = COALESCE(?, fecha_movimiento)"
                 + " WHERE id_movimiento = ?";
@@ -74,7 +68,6 @@ public class MovimientoBilleteraRepository {
         return filasAfectadas > 0;
     }
 
-    // Eliminar un registro por su ID.
     public boolean deleteById(Long idMovimiento) {
         String sql = "DELETE FROM movimientos_billeteras WHERE id_movimiento = ?";
         int filasAfectadas = jdbcTemplate.update(sql, idMovimiento);

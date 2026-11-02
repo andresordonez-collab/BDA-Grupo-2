@@ -75,7 +75,7 @@ export default function ResumenMensualPage() {
         Mi resumen mensual
       </Typography>
       <Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>
-        Revisa los viajes finalizados que comenzaste durante el mes seleccionado.
+        Viajes finalizados del mes seleccionado.
       </Typography>
 
       <Paper

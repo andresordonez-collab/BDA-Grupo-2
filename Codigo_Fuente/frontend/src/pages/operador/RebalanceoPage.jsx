@@ -60,7 +60,6 @@ function normalizarEstacion(estacion, disponibilidad) {
     null;
   const activa =
     estacion.estacionActiva ?? estacion.estacion_activa ?? null;
-  // GET /api/estaciones ya trae los disponibles por tipo; /disponibilidad queda como respaldo.
   const bicicletas =
     estacion.cantidadBicicletas ?? disponibilidad?.cantidadBicicletas ?? null;
   const scooters =
@@ -85,7 +84,6 @@ function normalizarEstacion(estacion, disponibilidad) {
   };
 }
 
-// Disponibles de una estación para el tipo elegido (sin tipo: todos los tipos).
 function disponiblesPorTipo(estacion, tipo) {
   if (!tipo) return estacion.disponibles;
   if (tipo.nombreTipoVehiculo === 'Bicicleta') return estacion.bicicletas;
@@ -97,7 +95,6 @@ function nombreVehiculos(tipo) {
   return tipo ? `${tipo.nombreTipoVehiculo.toLowerCase()}s` : 'vehículos';
 }
 
-// Desglose de una orden: "2 bicicletas · 1 scooter" (o "—" si no tiene detalle registrado).
 function tiposTrasladados(orden) {
   const partes = [];
   const bicicletas = Number(orden.cantidadBicicletas ?? 0);
@@ -312,6 +309,10 @@ export default function RebalanceoPage() {
       return 'Las estaciones de origen y destino deben ser diferentes.';
     }
 
+    if (!tipoElegido) {
+      return 'Selecciona el tipo de vehículo a trasladar.';
+    }
+
     const numero = Number(cantidad);
 
     if (!Number.isInteger(numero) || numero <= 0) {
@@ -353,8 +354,7 @@ export default function RebalanceoPage() {
         idEstacionDestino: Number(destino.id),
         idOperador: Number(idOperador),
         cantidadVehiculos: Number(cantidad),
-        // Sin tipo (null) se trasladan vehículos de cualquier tipo.
-        idTipoVehiculo: tipoElegido ? Number(tipoElegido.idTipoVehiculo) : null,
+        idTipoVehiculo: Number(tipoElegido.idTipoVehiculo),
       });
 
       setExito(
@@ -377,14 +377,12 @@ export default function RebalanceoPage() {
       </Typography>
 
       <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-        Traslada vehículos desde una estación con exceso hacia una con
-        déficit.
+        Traslado de vehículos entre estaciones.
       </Typography>
 
       {!idOperador && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          No se pudo identificar al operador. La ejecución estará
-          deshabilitada hasta que se integre la sesión.
+          No se identificó al operador.
         </Alert>
       )}
 
@@ -502,9 +500,9 @@ export default function RebalanceoPage() {
                 label="Tipo de vehículo"
                 value={tipoId}
                 onChange={(event) => setTipoId(event.target.value)}
-                helperText="Elige qué tipo trasladar. Con 'Cualquiera' se mueven los primeros disponibles."
+                required
               >
-                <MenuItem value="">Cualquiera</MenuItem>
+                <MenuItem value="">Selecciona un tipo</MenuItem>
                 {tipos.map((tipo) => (
                   <MenuItem
                     key={tipo.idTipoVehiculo}
@@ -597,12 +595,6 @@ export default function RebalanceoPage() {
                 </Typography>
               </Box>
             </Box>
-
-            <Alert severity="info" sx={{ mt: 3 }}>
-              La operación se realiza de forma segura: si no hay
-              vehículos suficientes o falta capacidad, no se modifica
-              nada.
-            </Alert>
           </Paper>
         </Box>
       )}
@@ -619,7 +611,7 @@ export default function RebalanceoPage() {
             Historial de órdenes
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Últimos rebalanceos registrados en la base de datos.
+            Órdenes de rebalanceo registradas.
           </Typography>
         </Box>
 

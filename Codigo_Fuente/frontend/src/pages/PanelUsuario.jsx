@@ -23,13 +23,11 @@ import { getErrorMessage } from '../http-common';
 
 
 function PanelUsuario() {
-    // Estado para almacenar las estaciones disponibles, estados de carga y errores
     const [estacionesDisponibles, setEstacionesDisponibles] = useState([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [busqueda, setBusqueda] = useState('');
 
-    // Funcion que usa el backend para obtener las estaciones disponibles
     const cargarEstacionesDisponibles = async () => {
         try {
             setCargando(true);
@@ -89,7 +87,7 @@ function PanelUsuario() {
         <h1>Encuentra tu próxima estación</h1>
 
         <p className="panel-usuario__descripcion">
-            Consulta las bicicletas y scooters disponibles para tu próximo viaje.
+            Bicicletas y scooters disponibles por estación.
         </p>
         </header>
 

@@ -1,15 +1,10 @@
--- ==================================================
--- CREACIÓN DE TABLAS
--- ==================================================
--- Define la estructura principal del sistema.
+-- Tablas
 
--- Almacena los roles disponibles del sistema.
 CREATE TABLE roles(
 	id_rol BIGSERIAL PRIMARY KEY, 
 	nombre_rol VARCHAR(50) UNIQUE NOT NULL CHECK (nombre_rol IN ('Operador', 'Usuario'))
 );
 
--- Registra a los usuarios y el rol asignado a cada uno.
 CREATE TABLE usuarios(
 	id_usuario BIGSERIAL PRIMARY KEY,
 	id_rol BIGINT NOT NULL,
@@ -21,7 +16,6 @@ CREATE TABLE usuarios(
 	FOREIGN KEY (id_rol) REFERENCES roles(id_rol)
 );
 
--- Representa la billetera de cada usuario y su saldo disponible.
 CREATE TABLE billeteras(
 	id_billetera BIGSERIAL PRIMARY KEY,
 	id_usuario BIGINT UNIQUE NOT NULL,
@@ -29,7 +23,6 @@ CREATE TABLE billeteras(
 	FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario)
 );
 
--- Contiene las estaciones, su ubicación, capacidad y estado.
 CREATE TABLE estaciones(
 	id_estacion BIGSERIAL PRIMARY KEY,
 	nombre_estacion VARCHAR(100) UNIQUE NOT NULL,
@@ -40,7 +33,6 @@ CREATE TABLE estaciones(
 	estacion_activa BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Registra el traslado de vehículos entre estaciones.
 CREATE TABLE ordenes_rebalanceo(
 	id_orden BIGSERIAL PRIMARY KEY,
 	id_estacion_origen BIGINT NOT NULL,
@@ -48,19 +40,17 @@ CREATE TABLE ordenes_rebalanceo(
 	id_operador BIGINT NOT NULL,
 	cantidad_vehiculos INT NOT NULL CHECK (cantidad_vehiculos > 0),
 	fecha_orden TIMESTAMP NOT NULL DEFAULT NOW(),
-	estado_orden VARCHAR(20) NOT NULL CHECK (estado_orden IN ('Completada', 'Cancelada')),
+	estado_orden VARCHAR(20) NOT NULL CHECK (estado_orden IN ('Completada')),
 	FOREIGN KEY (id_estacion_origen) REFERENCES estaciones(id_estacion),
 	FOREIGN KEY (id_estacion_destino) REFERENCES estaciones(id_estacion),
 	FOREIGN KEY (id_operador) REFERENCES usuarios(id_usuario)
 );
 
--- Define los tipos de vehículos permitidos.
 CREATE TABLE tipos_vehiculos(
 	id_tipo_vehiculo BIGSERIAL PRIMARY KEY,
 	nombre_tipo_vehiculo VARCHAR(20) UNIQUE NOT NULL CHECK (nombre_tipo_vehiculo IN ('Bicicleta', 'Scooter'))
 );
 
--- Registra los vehículos, su tipo, ubicación, batería y estado.
 CREATE TABLE vehiculos(
 	id_vehiculo BIGSERIAL PRIMARY KEY,
 	id_tipo_vehiculo BIGINT NOT NULL,
@@ -70,10 +60,11 @@ CREATE TABLE vehiculos(
 	fecha_alta TIMESTAMP NOT NULL DEFAULT NOW(),
 	estado_vehiculo VARCHAR(20) NOT NULL CHECK (estado_vehiculo IN ('Disponible', 'En uso', 'En mantención', 'Dado de baja')),
 	FOREIGN KEY (id_tipo_vehiculo) REFERENCES tipos_vehiculos(id_tipo_vehiculo),
-	FOREIGN KEY (id_estacion) REFERENCES estaciones(id_estacion)
+	FOREIGN KEY (id_estacion) REFERENCES estaciones(id_estacion),
+	-- Solo un vehículo en uso puede estar fuera de una estación.
+	CONSTRAINT chk_vehiculo_estacion_segun_estado CHECK ((estado_vehiculo = 'En uso') = (id_estacion IS NULL))
 );
 
--- Guarda el historial de cambios de estado de los vehículos.
 CREATE TABLE auditorias_vehiculos(
 	id_auditoria BIGSERIAL PRIMARY KEY,
 	id_vehiculo BIGINT NOT NULL,
@@ -86,7 +77,6 @@ CREATE TABLE auditorias_vehiculos(
 	FOREIGN KEY (id_operador) REFERENCES usuarios(id_usuario)
 );
 
--- Relaciona las órdenes de rebalanceo con los vehículos trasladados.
 CREATE TABLE detalles_rebalanceo(
 	id_orden BIGINT NOT NULL,
 	id_vehiculo BIGINT NOT NULL,
@@ -95,7 +85,6 @@ CREATE TABLE detalles_rebalanceo(
 	FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo)
 );
 
--- Define los valores de cobro según el tipo de vehículo.
 CREATE TABLE tarifas(
 	id_tarifa BIGSERIAL PRIMARY KEY,
 	id_tipo_vehiculo BIGINT NOT NULL,
@@ -106,7 +95,6 @@ CREATE TABLE tarifas(
 	FOREIGN KEY (id_tipo_vehiculo) REFERENCES tipos_vehiculos(id_tipo_vehiculo)
 );
 
--- Registra los viajes realizados por los usuarios.
 CREATE TABLE viajes(
 	id_viaje BIGSERIAL PRIMARY KEY,
 	id_usuario BIGINT NOT NULL,
@@ -126,7 +114,6 @@ CREATE TABLE viajes(
 	FOREIGN KEY (id_tarifa) REFERENCES tarifas(id_tarifa)
 );
 
--- Registra recargas, cobros y ajustes de las billeteras.
 CREATE TABLE movimientos_billeteras(
 	id_movimiento BIGSERIAL PRIMARY KEY,
 	id_billetera BIGINT NOT NULL,
@@ -138,27 +125,22 @@ CREATE TABLE movimientos_billeteras(
 	FOREIGN KEY (id_viaje) REFERENCES viajes(id_viaje)
 );
 
--- ==================================================
--- ÍNDICES Y TRIGGERS
--- ==================================================
--- Optimiza consultas frecuentes y aplica validaciones automáticas.
+-- Índices y triggers
 
--- Índices.
-
---Indexar el estado de los vehículos.
+-- Tarea 8: Índice sobre el estado del vehículo.
 
 CREATE INDEX idx_vehiculos_estado ON vehiculos(estado_vehiculo);
 
--- Indexar los id_usuarios en la tabla viajes.
+-- Tarea 8: Índice sobre el usuario del viaje.
 
 CREATE INDEX idx_viajes_usuario ON viajes(id_usuario);
 
--- Indexar la fecha de inicio del viaje.
+-- Tarea 8: Índice sobre la fecha de inicio del viaje.
 
 CREATE INDEX idx_viajes_fecha_inicio ON viajes(fecha_inicio);
 
--- Trigger 1: Impedir el inicio de un viaje si el usuario tiene saldo negativo, 
--- ya posee otro viaje activo o si la batería del vehículo es inferior al 20%.
+-- Tarea 5: Trigger 1. Impide iniciar un viaje con saldo negativo, con otro viaje activo
+-- o con un scooter bajo el 20% de batería.
 
 CREATE OR REPLACE FUNCTION validar_inicio_viaje()
 RETURNS TRIGGER
@@ -169,29 +151,29 @@ DECLARE
     v_bateria INT;
     v_tipo VARCHAR(20);
 BEGIN
-    -- 1. Obtener saldo del usuario
+    -- Saldo del usuario.
     SELECT saldo INTO v_saldo
     FROM billeteras
     WHERE id_usuario = NEW.id_usuario;
 
-    -- 2. Obtener batería y tipo de vehículo en una sola consulta (JOIN antes de WHERE)
+    -- Batería y tipo del vehículo.
     SELECT v.nivel_bateria, tv.nombre_tipo_vehiculo 
     INTO v_bateria, v_tipo
     FROM vehiculos v
     JOIN tipos_vehiculos tv ON v.id_tipo_vehiculo = tv.id_tipo_vehiculo
     WHERE v.id_vehiculo = NEW.id_vehiculo;
 
-    -- Validación A: Saldo negativo
+    -- Saldo negativo.
     IF v_saldo < 0 THEN
         RAISE EXCEPTION 'No puede iniciar el viaje: tiene saldo negativo ($%).', v_saldo;
     END IF;
 
-    -- Validación B: Batería inferior al 20% en Scooters
+    -- Batería insuficiente en scooters.
     IF v_tipo = 'Scooter' AND (v_bateria IS NULL OR v_bateria < 20) THEN
         RAISE EXCEPTION 'Nivel de batería insuficiente, no se puede iniciar el viaje.';
     END IF;
 
-    -- Validación C: Viaje activo existente
+    -- Viaje activo existente.
     IF EXISTS (
         SELECT 1
         FROM viajes
@@ -211,8 +193,8 @@ FOR EACH ROW
 WHEN (NEW.estado_viaje = 'Activo')
 EXECUTE FUNCTION validar_inicio_viaje();
 
--- trigger 2:  Auditar cada cambio de estado de un vehículo a "En mantención" o "Dado de  baja", 
--- guardando el operador responsable, la fecha y el motivo.
+-- Tarea 6: Trigger 2. Audita el cambio de estado de un vehículo a "En mantención" o "Dado de baja"
+-- con el operador responsable, la fecha y el motivo.
 
 CREATE OR REPLACE FUNCTION auditar_cambio_estado_vehiculo()
 RETURNS TRIGGER
@@ -222,14 +204,14 @@ DECLARE
     v_id_operador BIGINT;
     v_motivo TEXT;
 BEGIN
-    -- Validar que el vehículo cambie a un estado que requiere auditoría.
+    -- Solo se audita el paso a mantención o baja.
     IF NEW.estado_vehiculo IN ('En mantención', 'Dado de baja') AND NEW.estado_vehiculo IS DISTINCT FROM OLD.estado_vehiculo 
     THEN
-        -- 1. Obtener el operador y el motivo enviados por el backend.
+        -- Operador y motivo enviados por el backend.
         v_id_operador := current_setting('app.id_operador')::BIGINT;
         v_motivo := current_setting('app.motivo', true);
 
-        -- 2. Registrar el cambio de estado en la tabla de auditoría.
+        -- Registro de auditoría.
         INSERT INTO auditorias_vehiculos (
             id_vehiculo, 
             id_operador, 
@@ -248,19 +230,17 @@ BEGIN
         );
     END IF;
 
-    -- Permitir que la actualización del vehículo continúe.
     RETURN NEW;
 END;
 $BODY$
 LANGUAGE plpgsql;
 
--- Ejecutar la auditoría después de actualizar el estado del vehículo.
 CREATE TRIGGER trigger_auditar_cambio_estado_vehiculo
 AFTER UPDATE OF estado_vehiculo ON vehiculos
 FOR EACH ROW
 EXECUTE FUNCTION auditar_cambio_estado_vehiculo();
 
--- trigger 3: Crear automáticamente una billetera con saldo cero para cada nuevo usuario con rol "Usuario".
+-- Extra: Crea la billetera con saldo 0 de cada usuario nuevo con rol "Usuario".
 CREATE OR REPLACE FUNCTION crear_billetera_usuario()
 RETURNS TRIGGER
 AS
@@ -286,10 +266,9 @@ AFTER INSERT OR UPDATE OF id_rol ON usuarios
 FOR EACH ROW
 EXECUTE FUNCTION crear_billetera_usuario();
 
--- ==================================================
--- PROCEDIMIENTO ALMACENADO 1: FINALIZAR VIAJE
--- ==================================================
--- Finaliza un viaje, calcula su costo, actualiza saldos y libera el vehículo.
+-- Procedimientos almacenados
+-- Tarea 3: Procedimiento 1. Finaliza un viaje: registra el término, calcula el costo, descuenta la billetera
+-- y ancla el vehículo en la estación de destino.
 
 CREATE OR REPLACE PROCEDURE finalizar_viaje(p_id_viaje BIGINT, p_id_estacion_destino BIGINT)
 LANGUAGE plpgsql AS $$
@@ -307,7 +286,7 @@ DECLARE
     var_capacidad_destino INT;
     var_ocupacion_destino BIGINT;
 BEGIN
-    -- 1. Bloquear y validar la estación de destino.
+    -- Estación de destino.
     SELECT capacidad INTO var_capacidad_destino
     FROM estaciones
     WHERE id_estacion = p_id_estacion_destino AND estacion_activa = TRUE
@@ -317,7 +296,7 @@ BEGIN
         RAISE EXCEPTION 'Error: La estación de destino % no existe o está inactiva.', p_id_estacion_destino;
     END IF;
 
-    -- 2. Obtener y bloquear el viaje activo
+    -- Viaje activo.
     SELECT fecha_inicio, id_usuario, id_vehiculo, id_tarifa
     INTO var_fecha_inicio, var_id_usuario, var_id_vehiculo, var_id_tarifa
     FROM viajes
@@ -328,7 +307,7 @@ BEGIN
         RAISE EXCEPTION 'Error: El viaje % no existe o ya está Finalizado.', p_id_viaje;
     END IF;
 
-    -- 3. Verificar que la estación de destino tenga cupo disponible
+    -- Cupo de la estación de destino.
     SELECT COUNT(*) INTO var_ocupacion_destino
     FROM vehiculos
     WHERE id_estacion = p_id_estacion_destino;
@@ -338,10 +317,10 @@ BEGIN
             p_id_estacion_destino, var_ocupacion_destino, var_capacidad_destino;
     END IF;
 
-    -- 4. Calcular minutos exactos de uso (mínimo 1 minuto)
+    -- Minutos de uso (mínimo 1).
     var_minutos_uso := GREATEST(1, CEIL(EXTRACT(EPOCH FROM (var_fecha_fin - var_fecha_inicio)) / 60.0))::INT;
 
-    -- 5. Obtener valores de la tarifa asociada al viaje
+    -- Tarifa del viaje.
     SELECT valor_desbloqueo, valor_minuto
     INTO var_valor_desbloqueo, var_valor_minuto
     FROM tarifas
@@ -349,7 +328,7 @@ BEGIN
 
     var_costo_final := var_valor_desbloqueo + (var_minutos_uso * var_valor_minuto);
 
-    -- 6. Actualizar el viaje
+    -- Cierre del viaje.
     UPDATE viajes
     SET fecha_fin = var_fecha_fin,
         minutos_viaje = var_minutos_uso,
@@ -358,7 +337,7 @@ BEGIN
         estado_viaje = 'Finalizado'
     WHERE id_viaje = p_id_viaje;
 
-    -- 7. Descontar saldo de la billetera y registrar movimiento
+    -- Cobro en la billetera y movimiento.
     UPDATE billeteras
     SET saldo = saldo - var_costo_final
     WHERE id_usuario = var_id_usuario
@@ -367,7 +346,7 @@ BEGIN
     INSERT INTO movimientos_billeteras (id_billetera, id_viaje, tipo_movimiento, monto, fecha_movimiento)
     VALUES (var_id_billetera, p_id_viaje, 'Cobro_viaje', var_costo_final, var_fecha_fin);
 
-    -- 8. Anclar el vehículo en la estación de destino
+    -- Vehículo anclado en el destino.
     UPDATE vehiculos
     SET id_estacion = p_id_estacion_destino,
         estado_vehiculo = 'Disponible'
@@ -375,17 +354,15 @@ BEGIN
 END;
 $$;
 
--- ==================================================
--- PROCEDIMIENTO ALMACENADO 2: REBALANCEAR FLOTA
--- ==================================================
--- Traslada vehículos entre estaciones validando capacidad y operador.
+-- Tarea 4: Procedimiento 2. Rebalancea la flota: traslada vehículos de un tipo entre dos estaciones,
+-- valida capacidad y operador, y registra la orden de traslado.
 
 CREATE OR REPLACE PROCEDURE rebalancear_flota(
     p_id_estacion_origen BIGINT,
     p_id_estacion_destino BIGINT,
     p_id_operador BIGINT,
     p_cantidad_vehiculos INT,
-    p_id_tipo_vehiculo BIGINT DEFAULT NULL
+    p_id_tipo_vehiculo BIGINT
 )
 LANGUAGE plpgsql AS $$
 DECLARE
@@ -394,7 +371,7 @@ DECLARE
     var_vehiculos BIGINT[];
     var_id_orden BIGINT;
 BEGIN
-    -- REPEATABLE READ conserva una ocupación anterior incluso después de esperar bloqueos.
+    -- No admite REPEATABLE READ: conservaría una ocupación desactualizada.
     IF current_setting('transaction_isolation') = 'repeatable read' THEN
         RAISE EXCEPTION 'rebalancear_flota no admite REPEATABLE READ; utilice READ COMMITTED o SERIALIZABLE.';
     END IF;
@@ -411,7 +388,7 @@ BEGIN
         RAISE EXCEPTION 'Las estaciones de origen y destino deben ser diferentes.';
     END IF;
 
-    -- Bloquear primero las estaciones en orden ascendente para reducir interbloqueos.
+    -- Bloqueo de estaciones en orden ascendente para evitar interbloqueos.
     PERFORM id_estacion
     FROM estaciones
     WHERE id_estacion IN (p_id_estacion_origen, p_id_estacion_destino)
@@ -434,7 +411,7 @@ BEGIN
         RAISE EXCEPTION 'La estación de destino % no existe o está inactiva.', p_id_estacion_destino;
     END IF;
 
-    -- Mantener vigentes el estado y el rol del operador durante la operación.
+    -- Operador vigente con rol Operador.
     PERFORM 1
     FROM usuarios u
     JOIN roles r ON r.id_rol = u.id_rol
@@ -447,37 +424,37 @@ BEGIN
         RAISE EXCEPTION 'El usuario % no existe, está inactivo o no tiene el rol Operador.', p_id_operador;
     END IF;
 
-    -- Tipo de vehículo opcional: si viene, debe existir; si es NULL se trasladan vehículos de cualquier tipo.
-    IF p_id_tipo_vehiculo IS NOT NULL THEN
-        PERFORM 1
-        FROM tipos_vehiculos
-        WHERE id_tipo_vehiculo = p_id_tipo_vehiculo;
-
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'El tipo de vehículo % no existe.', p_id_tipo_vehiculo;
-        END IF;
+    -- El tipo de vehículo es obligatorio y debe existir.
+    IF p_id_tipo_vehiculo IS NULL THEN
+        RAISE EXCEPTION 'Debe indicar el tipo de vehículo a trasladar.';
     END IF;
 
-    -- Seleccionar y bloquear hasta N disponibles (del tipo indicado, si se indicó), siempre por ID ascendente.
+    PERFORM 1
+    FROM tipos_vehiculos
+    WHERE id_tipo_vehiculo = p_id_tipo_vehiculo;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'El tipo de vehículo % no existe.', p_id_tipo_vehiculo;
+    END IF;
+
+    -- Vehículos disponibles del tipo, por id ascendente.
     SELECT ARRAY(
         SELECT id_vehiculo
         FROM vehiculos
         WHERE id_estacion = p_id_estacion_origen
           AND estado_vehiculo = 'Disponible'
-          AND (p_id_tipo_vehiculo IS NULL OR id_tipo_vehiculo = p_id_tipo_vehiculo)
+          AND id_tipo_vehiculo = p_id_tipo_vehiculo
         ORDER BY id_vehiculo
         LIMIT p_cantidad_vehiculos
         FOR UPDATE
     ) INTO var_vehiculos;
 
     IF cardinality(var_vehiculos) < p_cantidad_vehiculos THEN
-        RAISE EXCEPTION 'La estación de origen % tiene solo % vehículos disponibles%; se solicitaron %.',
-            p_id_estacion_origen, cardinality(var_vehiculos),
-            CASE WHEN p_id_tipo_vehiculo IS NULL THEN '' ELSE ' del tipo seleccionado' END,
-            p_cantidad_vehiculos;
+        RAISE EXCEPTION 'La estación de origen % tiene solo % vehículos disponibles del tipo seleccionado; se solicitaron %.',
+            p_id_estacion_origen, cardinality(var_vehiculos), p_cantidad_vehiculos;
     END IF;
 
-    -- Todo vehículo asociado al destino ocupa espacio, cualquiera sea su estado.
+    -- Todo vehículo anclado al destino ocupa espacio, de cualquier estado.
     SELECT COUNT(*) INTO var_ocupacion_destino
     FROM vehiculos
     WHERE id_estacion = p_id_estacion_destino;
@@ -487,7 +464,7 @@ BEGIN
             p_id_estacion_destino, p_cantidad_vehiculos, var_ocupacion_destino, var_capacidad_destino;
     END IF;
 
-    -- Trasladar exactamente los vehículos seleccionados, conservando su estado.
+    -- Traslado de los vehículos seleccionados.
     UPDATE vehiculos
     SET id_estacion = p_id_estacion_destino
     WHERE id_vehiculo = ANY(var_vehiculos);
@@ -505,19 +482,11 @@ BEGIN
     INSERT INTO detalles_rebalanceo (id_orden, id_vehiculo)
     SELECT var_id_orden, unnest(var_vehiculos);
 
-    -- Sin capturar excepciones: cualquier error revierte toda la llamada.
-    -- Los demás movimientos deben bloquear las estaciones antes que los vehículos.
 END;
 $$;
 
--- ==================================================
--- VISTA MATERIALIZADA
--- ==================================================
--- Resume la demanda de viajes por estación y franja horaria.
+-- Tarea 7: Vista materializada de la demanda de viajes por estación y franja horaria.
 
--- Demanda por Estación y Franja Horaria
--- Vista materializada
--- CTE para calcular la cantidad de viajes iniciados y finalizados por estación y franja horaria.
 CREATE MATERIALIZED VIEW mv_demanda_estacion_horaria AS
 WITH viajes_iniciados AS (
     SELECT
@@ -535,7 +504,6 @@ viajes_finalizados AS (
     FROM viajes
     GROUP BY id_destino, EXTRACT(HOUR FROM fecha_fin)::INT
 )
--- Selecciona todas las estaciones y combina con las franjas horarias, uniendo los resultados de los CTEs.
 SELECT
     e.id_estacion,
     e.nombre_estacion,
@@ -548,11 +516,11 @@ LEFT JOIN viajes_iniciados   vi ON e.id_estacion = vi.id_estacion AND h.hora = v
 LEFT JOIN viajes_finalizados vf ON e.id_estacion = vf.id_estacion AND h.hora = vf.franja_horaria
 WITH DATA;
 
--- Índice único (necesario para REFRESH CONCURRENTLY)
+-- Índice único requerido por REFRESH CONCURRENTLY.
 CREATE UNIQUE INDEX idx_mv_demanda_estacion_hora
 ON mv_demanda_estacion_horaria (id_estacion, franja_horaria);
 
--- Función de refresco
+-- Función que refresca la vista.
 CREATE OR REPLACE FUNCTION fn_refrescar_demanda_estaciones()
 RETURNS void AS $$
 BEGIN
@@ -560,7 +528,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Programar el refresco automático de la vista materializada
+-- Refresco automático cada hora.
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 SELECT cron.schedule(
@@ -569,8 +537,8 @@ SELECT cron.schedule(
     $$SELECT fn_refrescar_demanda_estaciones();$$
 );
 
--- Resumen mensual de un usuario: viajes finalizados que iniciaron en el mes,
--- minutos totales y gasto. Si no hay viajes, devuelve ceros.
+-- Tarea 10: Resumen mensual de un usuario: viajes finalizados del mes, minutos totales y gasto.
+-- Sin viajes devuelve ceros.
 CREATE OR REPLACE FUNCTION fn_resumen_mensual_usuario(
     p_id_usuario BIGINT,
     p_anio INT,
@@ -593,9 +561,8 @@ LANGUAGE sql STABLE AS $$
       AND fecha_inicio <  make_date(p_anio, p_mes, 1) + INTERVAL '1 month';
 $$;
 
--- Inicia un viaje: valida al usuario y al vehículo, crea el viaje con la tarifa vigente
--- y saca el vehículo de la estación, todo en una sola transacción. Devuelve el id del viaje.
--- Las reglas de saldo, batería y viaje activo las valida trigger_validar_inicio_viaje.
+-- Tarea 2: Inicia un viaje: crea el viaje con la tarifa vigente y saca el vehículo de la estación.
+-- Saldo, batería y viaje activo los valida el trigger de la Tarea 5.
 CREATE OR REPLACE FUNCTION fn_iniciar_viaje(p_id_usuario BIGINT, p_id_vehiculo BIGINT)
 RETURNS BIGINT
 LANGUAGE plpgsql AS $$
@@ -606,8 +573,7 @@ DECLARE
     v_id_tarifa BIGINT;
     v_id_viaje BIGINT;
 BEGIN
-    -- 1. Bloquear al usuario activo: serializa los inicios de un mismo usuario
-    --    y evita que dos viajes simultáneos pasen la validación de viaje activo.
+    -- Bloqueo del usuario para serializar sus inicios de viaje.
     PERFORM 1
     FROM usuarios
     WHERE id_usuario = p_id_usuario AND usuario_activo = TRUE
@@ -617,7 +583,7 @@ BEGIN
         RAISE EXCEPTION 'Error: El usuario % no existe o está inactivo.', p_id_usuario;
     END IF;
 
-    -- 2. Bloquear el vehículo: evita que dos usuarios tomen el mismo.
+    -- Bloqueo del vehículo.
     SELECT id_tipo_vehiculo, id_estacion, estado_vehiculo
     INTO v_id_tipo_vehiculo, v_id_estacion, v_estado_vehiculo
     FROM vehiculos
@@ -636,7 +602,7 @@ BEGIN
         RAISE EXCEPTION 'Error: El vehículo % no está disponible.', p_id_vehiculo;
     END IF;
 
-    -- 3. Tarifa activa más reciente para el tipo de vehículo.
+    -- Tarifa activa más reciente del tipo.
     SELECT id_tarifa
     INTO v_id_tarifa
     FROM tarifas
@@ -648,12 +614,12 @@ BEGIN
         RAISE EXCEPTION 'Error: No hay una tarifa activa para el vehículo %.', p_id_vehiculo;
     END IF;
 
-    -- 4. Crear el viaje (aquí se dispara el trigger de validación).
+    -- Creación del viaje (dispara el trigger de validación).
     INSERT INTO viajes (id_usuario, id_vehiculo, id_origen, id_tarifa, fecha_inicio, estado_viaje)
     VALUES (p_id_usuario, p_id_vehiculo, v_id_estacion, v_id_tarifa, NOW(), 'Activo')
     RETURNING id_viaje INTO v_id_viaje;
 
-    -- 5. Sacar el vehículo de la estación y marcarlo en uso.
+    -- Vehículo en uso y fuera de la estación.
     UPDATE vehiculos
     SET estado_vehiculo = 'En uso',
         id_estacion = NULL
@@ -663,22 +629,16 @@ BEGIN
 END;
 $$;
 
--- ==================================================
--- POBLACIÓN DE TABLAS
--- ==================================================
--- Inserta datos de prueba y sincroniza las secuencias de identificadores.
+-- Datos de prueba
 
 BEGIN;
 INSERT INTO roles (id_rol, nombre_rol) VALUES
     (1, 'Operador'),
     (2, 'Usuario');
 
--- Autenticación de los 10 usuarios de prueba: contraseña 123456.
--- Cada usuario tiene su propio hash BCrypt con sal aleatoria (costo 12).
--- Credenciales destinadas únicamente a pruebas locales del proyecto.
--- Joaquín Díaz permanece inactivo: su login debe devolver 401 aunque la contraseña coincida.
+-- Usuarios de prueba: contraseña 123456. Joaquín Díaz está inactivo (su login devuelve 401).
 
--- Los seeders cargan sus propias billeteras: el trigger se desactiva mientras se insertan los usuarios.
+-- Las billeteras de prueba se cargan a mano: el trigger de billetera se desactiva durante la carga.
 ALTER TABLE usuarios DISABLE TRIGGER trigger_crear_billetera_usuario;
 
 INSERT INTO usuarios (id_usuario, id_rol, nombre_usuario, email, password_hash, usuario_activo, fecha_registro) VALUES
@@ -703,7 +663,7 @@ INSERT INTO billeteras (id_billetera, id_usuario, saldo) VALUES
     (7, 9, -340.00),
     (8, 10, 15900.00);
 
--- Con las billeteras de prueba cargadas, el trigger vuelve a quedar activo para los usuarios nuevos.
+-- Trigger de billetera reactivado.
 ALTER TABLE usuarios ENABLE TRIGGER trigger_crear_billetera_usuario;
 
 INSERT INTO estaciones (id_estacion, nombre_estacion, direccion, latitud, longitud, capacidad, estacion_activa) VALUES
@@ -728,7 +688,7 @@ VALUES
     (5, 1, 1, 'BICI-005', NULL, '2026-10-01 08:00:00', 'Disponible'),
     (6, 1, NULL, 'BICI-006', NULL, '2026-10-01 08:00:00', 'En uso'),
     (7, 1, 3, 'BICI-007', NULL, '2026-10-01 08:00:00', 'En mantención'),
-    (8, 1, NULL, 'BICI-008', NULL, '2026-10-01 08:00:00', 'Dado de baja'),
+    (8, 1, 3, 'BICI-008', NULL, '2026-10-01 08:00:00', 'Dado de baja'),
     (9, 2, 4, 'SCOOT-001', 75, '2026-10-01 09:00:00', 'Disponible'),
     (10, 2, 5, 'SCOOT-002', 62, '2026-10-01 09:00:00', 'Disponible'),
     (11, 2, 1, 'SCOOT-003', 48, '2026-10-01 09:00:00', 'Disponible'),
@@ -742,15 +702,14 @@ INSERT INTO ordenes_rebalanceo
     (id_orden, id_estacion_origen, id_estacion_destino, id_operador, cantidad_vehiculos, fecha_orden, estado_orden)
 VALUES
     (1, 2, 4, 1, 2, '2026-10-19 10:00:00', 'Completada'),
-    (2, 3, 5, 2, 2, '2026-10-19 11:00:00', 'Completada'),
-    (3, 1, 6, 1, 1, '2026-10-19 11:30:00', 'Cancelada');
+    (2, 3, 5, 2, 1, '2026-10-19 11:00:00', 'Completada'),
+    (3, 3, 5, 2, 1, '2026-10-19 11:05:00', 'Completada');
 
 INSERT INTO detalles_rebalanceo (id_orden, id_vehiculo) VALUES
     (1, 1),
     (1, 4),
     (2, 2),
-    (2, 12),
-    (3, 5);
+    (3, 12);
 
 INSERT INTO auditorias_vehiculos
     (id_auditoria, id_vehiculo, id_operador, estado_anterior, estado_nuevo, fecha_auditoria, motivo)
@@ -820,7 +779,7 @@ SELECT setval(pg_get_serial_sequence('tarifas', 'id_tarifa'), MAX(id_tarifa)) FR
 SELECT setval(pg_get_serial_sequence('viajes', 'id_viaje'), MAX(id_viaje)) FROM viajes;
 SELECT setval(pg_get_serial_sequence('movimientos_billeteras', 'id_movimiento'), MAX(id_movimiento)) FROM movimientos_billeteras;
 
--- Refrescar la vista materializada para reflejar inmediatamente los viajes insertados
+-- Refresco de la vista materializada con los viajes cargados.
 REFRESH MATERIALIZED VIEW CONCURRENTLY mv_demanda_estacion_horaria;
 
 COMMIT;

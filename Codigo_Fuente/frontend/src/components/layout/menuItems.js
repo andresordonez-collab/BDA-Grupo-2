@@ -7,7 +7,6 @@ import InsightsIcon from '@mui/icons-material/Insights';
 import PriceChangeIcon from '@mui/icons-material/PriceChange';
 import PeopleIcon from '@mui/icons-material/People';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 export const DRAWER_WIDTH = 240;
 
@@ -24,11 +23,6 @@ export const MENU_BY_ROLE = {
       label: 'Billeteras',
       path: '/operador/billeteras',
       icon: AccountBalanceWalletIcon,
-    },
-    {
-      label: 'Movimientos',
-      path: '/operador/movimientos-billeteras',
-      icon: ReceiptLongIcon,
     },
   ],
 

@@ -16,6 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Service
 public class VehiculoService {
@@ -29,7 +30,6 @@ public class VehiculoService {
         this.tipoVehiculoRepository = tipoVehiculoRepository;
     }
 
-    // Una bicicleta no tiene batería; un scooter la necesita (entre 0 y 100) para poder iniciar viajes.
     private void validarBateriaSegunTipo(VehiculoEntity vehiculo) {
         if (vehiculo.getIdTipoVehiculo() == null) {
             throw new IllegalArgumentException("Debe indicar el tipo de vehículo.");
@@ -50,9 +50,27 @@ public class VehiculoService {
         }
     }
 
+    private void validarEstacionSegunEstado(VehiculoEntity vehiculo) {
+        String estado = vehiculo.getEstadoVehiculo();
+        if (estado == null) {
+            return;
+        }
+
+        boolean enUso = "En uso".equals(estado);
+        if (enUso && vehiculo.getIdEstacion() != null) {
+            throw new IllegalArgumentException(
+                    "Un vehículo en uso está en viaje: no puede estar anclado a una estación.");
+        }
+        if (!enUso && vehiculo.getIdEstacion() == null) {
+            throw new IllegalArgumentException(
+                    "Un vehículo debe estar anclado a una estación, salvo mientras está en uso.");
+        }
+    }
+
     @Transactional
     public VehiculoEntity guardarVehiculo(VehiculoEntity vehiculo) {
         validarBateriaSegunTipo(vehiculo);
+        validarEstacionSegunEstado(vehiculo);
         return vehiculoRepository.save(vehiculo);
     }
 
@@ -103,10 +121,21 @@ public class VehiculoService {
             );
         }
 
-    // El ID utilizado por el repositorio siempre procede de la sesión.
         idOperador = idAutenticado;
 
+        if (!Objects.equals(vehiculo.getIdEstacion(), existente.getIdEstacion())) {
+            throw new IllegalArgumentException(
+                    "La estación de un vehículo cambia con un rebalanceo, no al editarlo.");
+        }
+        if (vehiculo.getEstadoVehiculo() != null
+                && !vehiculo.getEstadoVehiculo().equals(existente.getEstadoVehiculo())) {
+            throw new IllegalArgumentException(
+                    "El estado de un vehículo se cambia con la acción 'Cambiar estado', para que quede auditado.");
+        }
+        vehiculo.setEstadoVehiculo(existente.getEstadoVehiculo());
+
         validarBateriaSegunTipo(vehiculo);
+        validarEstacionSegunEstado(vehiculo);
 
         boolean actualizado = vehiculoRepository.update(idVehiculo, vehiculo, idOperador, motivo);
         if (!actualizado) {
@@ -115,6 +144,7 @@ public class VehiculoService {
         return obtenerVehiculoPorId(idVehiculo);
     }
 
+    // Tarea 6: Cambia el estado de un vehículo; el trigger de auditoría registra al operador de la sesión.
     @Transactional
     public VehiculoEntity cambiarEstado(Long idVehiculo, String estadoVehiculo,
                                         String motivo) {
@@ -165,6 +195,16 @@ public class VehiculoService {
             throw new IllegalArgumentException(
                     "Debe indicar un motivo para mantención o baja."
             );
+        }
+
+        VehiculoEntity existente = obtenerVehiculoPorId(idVehiculo);
+        if ("En uso".equals(existente.getEstadoVehiculo())) {
+            throw new IllegalArgumentException(
+                    "El vehículo está en uso (en viaje): su estado cambia al finalizar el viaje.");
+        }
+        if ("En uso".equals(estadoVehiculo)) {
+            throw new IllegalArgumentException(
+                    "El estado 'En uso' lo asigna el sistema al iniciar un viaje.");
         }
 
         Long idOperador = (Long) authentication.getPrincipal();

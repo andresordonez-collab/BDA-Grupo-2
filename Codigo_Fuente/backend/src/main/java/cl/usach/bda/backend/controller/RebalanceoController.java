@@ -16,7 +16,7 @@ public class RebalanceoController {
         this.service = service;
     }
 
-    // El operador sale del JWT (principal establecido por JwtAuthenticationFilter), no del body.
+    // Tarea 4: Rebalancea la flota; el operador sale del JWT.
     @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void rebalancear(@Valid @RequestBody RebalanceoRequestDTO solicitud,

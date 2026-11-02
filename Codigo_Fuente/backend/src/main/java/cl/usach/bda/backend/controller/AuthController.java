@@ -37,6 +37,7 @@ public class AuthController {
         this.cookieSecure = cookieSecure;
     }
 
+    // Tarea 2: Inicia sesión y entrega el JWT en una cookie HttpOnly.
     @PostMapping("/login")
     public ResponseEntity<SesionDTO> login(@Valid @RequestBody LoginRequestDTO solicitud) {
         return authService.autenticar(solicitud.email(), solicitud.password())
@@ -47,7 +48,7 @@ public class AuthController {
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
-    // El id sale del JWT (principal establecido por JwtAuthenticationFilter); los datos, de la BD.
+    // Tarea 2: Devuelve el usuario de la sesión: el id sale del JWT y los datos, de la BD.
     @GetMapping("/me")
     public ResponseEntity<SesionDTO> me(@AuthenticationPrincipal Long idUsuario) {
         return authService.obtenerSesion(idUsuario)
@@ -57,7 +58,7 @@ public class AuthController {
                         .build());
     }
 
-    // Público a propósito: cerrar sesión con una cookie vencida o ausente no debe fallar.
+    // Tarea 2: Cierra la sesión borrando la cookie del JWT.
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         return ResponseEntity.noContent()
@@ -65,8 +66,6 @@ public class AuthController {
                 .build();
     }
 
-    // Para borrar la cookie hay que repetir los mismos atributos (path, SameSite, etc.)
-    // con Max-Age=0; si no coinciden, el navegador la trata como otra cookie y no la borra.
     private ResponseCookie crearCookie(String valor, Duration duracion) {
         return ResponseCookie.from(COOKIE_TOKEN, valor)
                 .httpOnly(true)

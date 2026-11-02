@@ -1,16 +1,6 @@
 import axios from 'axios';
 
-/**
- * Cliente HTTP central del frontend.
- *
- * baseURL vacío: los servicios llaman a rutas relativas como "/api/...".
- * En desarrollo, Vite reenvía esas rutas a Spring Boot mediante el proxy
- * configurado en vite.config.js. En producción debe existir un proxy
- * equivalente (Nginx o similar).
- *
- * withCredentials: true es necesario porque el JWT viaja en una cookie
- * HttpOnly llamada access_token.
- */
+// Tarea 2: Cliente HTTP con cookies habilitadas para que el JWT viaje en cada solicitud.
 const http = axios.create({
   baseURL: '',
   withCredentials: true,

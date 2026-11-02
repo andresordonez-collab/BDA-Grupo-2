@@ -359,8 +359,7 @@ export default function DemandaPage() {
               Demanda por estación y hora
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Cada celda muestra iniciados + finalizados. Pasa el cursor
-              para ver el desglose.
+              Iniciados + finalizados por celda.
             </Typography>
           </Box>
 

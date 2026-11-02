@@ -118,7 +118,7 @@ export default function UsuariosPage() {
       label: 'Contraseña',
       type: 'password',
       helperText:
-        'Obligatoria al crear. Déjala vacía al editar para conservar la actual.',
+        'Mínimo 6 caracteres.',
     },
   ];
 
@@ -149,8 +149,6 @@ export default function UsuariosPage() {
       usuarioActivo: Boolean(form.usuarioActivo),
     };
 
-    // En edición, si la contraseña está vacía se omite.
-    // El backend conserva el hash actual.
     if (form.passwordHash) {
       payload.passwordHash = form.passwordHash;
     }
@@ -185,7 +183,7 @@ export default function UsuariosPage() {
   return (
     <EntityCrudPage
       title="Usuarios"
-      description="Administra las cuentas, roles y estado de acceso. Para dar de baja a un usuario, edítalo y desmarca Usuario activo; así se conserva su historial."
+      description="Cuentas, roles y estado de acceso."
       entityName="usuario"
       createLabel="Nuevo usuario"
       service={usuarioService}

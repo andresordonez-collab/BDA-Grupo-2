@@ -50,7 +50,6 @@ public class AuditoriaVehiculoRepository {
         return jdbcTemplate.query(sql, AUDITORIAS_VEHICULOS_ROW_MAPPER);
     }
 
-    // Listado para pantallas: trae el código del vehículo y el nombre del operador.
     public List<AuditoriaVehiculoDetalleDTO> findAllConDetalle() {
         String sql = """
                 SELECT

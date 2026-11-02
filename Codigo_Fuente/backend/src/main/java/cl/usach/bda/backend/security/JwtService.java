@@ -22,6 +22,7 @@ public class JwtService {
         this.expiracionMs = expiracionMs;
     }
 
+    // Tarea 2: Genera el JWT firmado con el id del usuario y su rol.
     public String generarToken(Long idUsuario, String rol) {
         Date ahora = new Date();
         return Jwts.builder()
@@ -33,7 +34,7 @@ public class JwtService {
                 .compact();
     }
 
-    // Lanza JwtException si la firma es inválida, el token está mal formado o expiró.
+    // Tarea 2: Valida la firma y la expiración del JWT; lanza JwtException si no es válido.
     public Claims validarToken(String token) {
         return Jwts.parser()
                 .verifyWith(clave)

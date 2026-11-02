@@ -25,7 +25,6 @@ public class BilleteraController {
         return ResponseEntity.ok(billeteraService.listarBilleteras());
     }
 
-    // Billetera del usuario autenticado, con sus últimos movimientos.
     @GetMapping("/mi-billetera")
     public ResponseEntity<MiBilleteraDTO> miBilletera(
             @RequestParam(name = "limite", required = false) Integer limite,

@@ -24,7 +24,6 @@ public class ViajeService {
 
     private final ViajeRepository repository;
 
-    // Rechazos de fn_iniciar_viaje y de trigger_validar_inicio_viaje que se muestran al cliente.
     private static final List<String> RECHAZOS_INICIO = List.of(
             "No puede iniciar el viaje", "Nivel de batería insuficiente",
             "El usuario ya tiene un viaje en curso", "Error: El usuario ",
@@ -38,6 +37,7 @@ public class ViajeService {
         this.repository = repository;
     }
 
+    // Tarea 3: Finaliza un viaje: comprueba que sea del usuario y llama a finalizar_viaje.
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void finalizar(Long idViaje, Long idEstacionDestino, Long idUsuario) {
         if (idUsuario == null || idUsuario <= 0) {
@@ -47,8 +47,7 @@ public class ViajeService {
             throw new IllegalArgumentException("Los identificadores deben ser enteros positivos.");
         }
         try {
-            // No invertir el orden de PA1: estación -> viaje -> CALL.
-            // Si la estación no existe, no tomar el bloqueo del viaje.
+            // Bloquea la estación y luego el viaje, como finalizar_viaje, para evitar interbloqueos.
             if (!repository.bloquearEstacion(idEstacionDestino)) {
                 throw new FinalizarViajeNegocioException();
             }
@@ -102,7 +101,7 @@ public class ViajeService {
         }
     }
 
-    // Sin anio/mes se usa el mes actual. Se valida antes de llegar a la BD: make_date falla con mes 13.
+    // Tarea 10: Valida el período y consulta el resumen mensual calculado en la BD.
     public ResumenMensualDTO resumenMensual(Long idUsuario, Integer anio, Integer mes) {
         if (idUsuario == null || idUsuario <= 0) {
             throw new IllegalArgumentException("El identificador de usuario debe ser un entero positivo.");
@@ -119,8 +118,7 @@ public class ViajeService {
         return repository.obtenerResumenMensual(idUsuario, anioConsulta, mesConsulta);
     }
 
-    // Inicia un viaje: valida al usuario y al vehículo, crea el viaje con la tarifa vigente
-    // y saca el vehículo de la estación, todo en una sola transacción.
+    // Tarea 2: Inicia un viaje con fn_iniciar_viaje y traduce los rechazos de la BD a errores de negocio.
     public Long iniciar(Long idVehiculo, Long idUsuario) {
         if (idUsuario == null || idUsuario <= 0) {
             throw new AuthenticationCredentialsNotFoundException("Se requiere un usuario autenticado.");
@@ -146,7 +144,6 @@ public class ViajeService {
         }
     }
 
-    // El mensaje del driver trae "ERROR: " y líneas de contexto (Where:); solo sirve la primera.
     private static String mensajePrincipal(String mensajeSql) {
         String primera = mensajeSql.lines().findFirst().orElse("");
         return primera.startsWith("ERROR: ") ? primera.substring("ERROR: ".length()) : primera;

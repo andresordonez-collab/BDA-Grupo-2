@@ -62,6 +62,7 @@ export default function VehiculoFormDialog({
 
   const esBicicleta = nombreTipo(form.idTipoVehiculo) === 'Bicicleta';
   const esScooter = nombreTipo(form.idTipoVehiculo) === 'Scooter';
+  const enUso = vehiculo?.estadoVehiculo === 'En uso';
 
   const cambiar = (event) => {
     const { name, value } = event.target;
@@ -69,7 +70,6 @@ export default function VehiculoFormDialog({
     setForm((actual) => {
       const siguiente = { ...actual, [name]: value };
 
-      // Una bicicleta no tiene batería: al elegir ese tipo se limpia el campo.
       if (name === 'idTipoVehiculo' && nombreTipo(value) === 'Bicicleta') {
         siguiente.nivelBateria = '';
       }
@@ -86,6 +86,11 @@ export default function VehiculoFormDialog({
 
     if (!form.idTipoVehiculo) {
       setError('Selecciona un tipo de vehículo.');
+      return;
+    }
+
+    if (!vehiculo && !form.idEstacion) {
+      setError('Selecciona la estación donde estará anclado el vehículo.');
       return;
     }
 
@@ -190,9 +195,11 @@ export default function VehiculoFormDialog({
           name="idEstacion"
           value={form.idEstacion}
           onChange={cambiar}
+          disabled={Boolean(vehiculo)}
+          required={!vehiculo}
           sx={{ mt: 2 }}
         >
-          <MenuItem value="">Sin estación</MenuItem>
+          {enUso && <MenuItem value="">En viaje (sin estación)</MenuItem>}
           {estaciones.map((estacion) => (
             <MenuItem
               key={estacion.idEstacion}
@@ -215,7 +222,7 @@ export default function VehiculoFormDialog({
           helperText={
             esBicicleta
               ? 'Las bicicletas no tienen batería.'
-              : 'Obligatoria para scooters, entre 0 y 100.'
+              : 'Entre 0 y 100.'
           }
           slotProps={{
             htmlInput: {

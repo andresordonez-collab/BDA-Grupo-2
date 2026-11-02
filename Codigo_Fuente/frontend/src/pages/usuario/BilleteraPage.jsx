@@ -61,7 +61,7 @@ export default function BilleteraPage() {
             Mi billetera
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Consulta tu saldo y tus últimos movimientos.
+            Saldo y últimos movimientos.
           </Typography>
         </Box>
 
@@ -118,7 +118,7 @@ export default function BilleteraPage() {
             {deuda > 0 ? (
               <>
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  El pago de deudas desde esta pantalla estará disponible próximamente.
+                  Pago de deudas no disponible.
                 </Alert>
                 <Button variant="contained" disabled>Pagar deuda</Button>
               </>

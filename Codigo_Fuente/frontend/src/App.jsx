@@ -15,7 +15,6 @@ import DemandaPage from './pages/operador/DemandaPage';
 import TarifasPage from './pages/operador/TarifasPage';
 import UsuariosPage from './pages/operador/UsuariosPage';
 import BilleterasPage from './pages/operador/BilleterasPage';
-import MovimientosBilleteraPage from './pages/operador/MovimientosBilleteraPage';
 
 import HistorialPage from './pages/usuario/HistorialPage';
 import ResumenMensualPage from './pages/usuario/ResumenMensualPage';
@@ -126,10 +125,6 @@ function ContenidoApp() {
             <Route path="tarifas" element={<TarifasPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="billeteras" element={<BilleterasPage />} />
-            <Route
-              path="movimientos-billeteras"
-              element={<MovimientosBilleteraPage />}
-            />
           </Route>
         </Route>
 

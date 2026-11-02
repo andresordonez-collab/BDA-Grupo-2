@@ -24,26 +24,22 @@ public class UsuarioController {
         this.viajeService = viajeService;
     }
 
-    // Endpoint para crear un nuevo usuario.
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> guardarUsuario(@RequestBody UsuarioEntity usuario) {
         UsuarioResponseDTO creado = service.guardarUsuario(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
-    // Endpoint para listar todos los usuarios.
     @GetMapping
     public ResponseEntity<List<UsuarioResponseDTO>> listarUsuarios() {
         return ResponseEntity.ok(service.listarUsuarios());
     }
 
-    // Endpoint para obtener un usuario por su ID.
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable("id") Long id) {
         return ResponseEntity.ok(service.obtenerUsuarioPorId(id));
     }
 
-    // Endpoint para actualizar un usuario existente.
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(
             @PathVariable("id") Long id,
@@ -51,20 +47,19 @@ public class UsuarioController {
         return ResponseEntity.ok(service.actualizarUsuario(id, usuario));
     }
 
-    // Endpoint para eliminar un usuario por su ID.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable("id") Long id) {
         service.eliminarUsuario(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Resumen mensual de cualquier usuario (ruta solo para Operador).
+    // Tarea 10: Resumen mensual de cualquier usuario, solo para operadores.
     @GetMapping("/{id}/resumen-mensual")
     public ResponseEntity<ResumenMensualDTO> resumenMensual(
             @PathVariable("id") Long id,
             @RequestParam(name = "anio", required = false) Integer anio,
             @RequestParam(name = "mes", required = false) Integer mes) {
-        service.obtenerUsuarioPorId(id); // 404 si el usuario no existe
+        service.obtenerUsuarioPorId(id);
         return ResponseEntity.ok(viajeService.resumenMensual(id, anio, mes));
     }
 }
