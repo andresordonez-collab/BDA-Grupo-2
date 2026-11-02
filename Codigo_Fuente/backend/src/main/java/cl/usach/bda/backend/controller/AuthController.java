@@ -1,8 +1,10 @@
 package cl.usach.bda.backend.controller;
 
+import cl.usach.bda.backend.dto.ClavePublicaDTO;
 import cl.usach.bda.backend.dto.LoginRequestDTO;
 import cl.usach.bda.backend.dto.SesionDTO;
 import cl.usach.bda.backend.security.JwtService;
+import cl.usach.bda.backend.security.LoginCifradoService;
 import cl.usach.bda.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Duration;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -27,20 +30,40 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final LoginCifradoService loginCifrado;
     private final boolean cookieSecure;
 
     public AuthController(AuthService authService,
                           JwtService jwtService,
+                          LoginCifradoService loginCifrado,
                           @Value("${app.cookie.secure}") boolean cookieSecure) {
         this.authService = authService;
         this.jwtService = jwtService;
+        this.loginCifrado = loginCifrado;
         this.cookieSecure = cookieSecure;
     }
 
+    // Tarea 2: Entrega la clave pública con la que el navegador cifra la contraseña antes de enviarla.
+    @GetMapping("/clave-publica")
+    public ClavePublicaDTO clavePublica() {
+        return new ClavePublicaDTO(loginCifrado.clavePublicaBase64());
+    }
+
     // Tarea 2: Inicia sesión y entrega el JWT en una cookie HttpOnly.
+    // La contraseña llega cifrada desde el navegador; la versión en texto se admite para clientes sin WebCrypto.
     @PostMapping("/login")
     public ResponseEntity<SesionDTO> login(@Valid @RequestBody LoginRequestDTO solicitud) {
-        return authService.autenticar(solicitud.email(), solicitud.password())
+        boolean hayCifrada = solicitud.passwordCifrada() != null && !solicitud.passwordCifrada().isBlank();
+        boolean hayPlana = solicitud.password() != null && !solicitud.password().isBlank();
+        if (hayCifrada == hayPlana) {
+            throw new IllegalArgumentException("Debe enviar la contraseña o la contraseña cifrada, no ambas ni ninguna.");
+        }
+
+        Optional<String> password = hayCifrada
+                ? loginCifrado.descifrarPassword(solicitud.passwordCifrada())
+                : Optional.of(solicitud.password());
+
+        return password.flatMap(clave -> authService.autenticar(solicitud.email(), clave))
                 .map(resultado -> ResponseEntity.ok()
                         .header(HttpHeaders.SET_COOKIE,
                                 crearCookie(resultado.token(), Duration.ofMillis(jwtService.getExpiracionMs())).toString())
