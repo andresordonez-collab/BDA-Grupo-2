@@ -16,7 +16,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import reporteService from '../../services/reporteService';
 import { getErrorMessage } from '../../http-common';
 
@@ -326,15 +325,6 @@ export default function DemandaPage() {
               </MenuItem>
             ))}
           </TextField>
-
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={cargar}
-            disabled={cargando}
-          >
-            Actualizar
-          </Button>
 
           {filtroEstacion && (
             <Button onClick={limpiarFiltros}>Limpiar</Button>
